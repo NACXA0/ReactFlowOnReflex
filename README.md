@@ -20,6 +20,8 @@ pip install reflex-react-flow
     - 定义数据类型时。None应该放到rx.Var[]里面:rx.Var[str | None] = None。不是外面
   - 定义数据类型时。style 的 CSSProperties 的 数据类型声明: 默认值是 {} 。不能是None，因为期望是dict，需要空字典，
     - 不需要加上rx.Var.create()  reflex会自动对直接赋值的字面量字典自动进行 Var 包装
+  - 定义数据类型时。react-flow的数据类型 () => void 在这里定义为 rx.Var[Callable[[], None]] = None      需要 from typing import Callable
+  - 定义数据类型时。react-flow的数据类型 (interactiveStatus: boolean) => void  在这里定义为 rx.Var[Callable[[bool], None]] = None     需要 from typing import Callable
   - 
 
 

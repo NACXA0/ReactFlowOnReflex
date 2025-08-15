@@ -3,7 +3,7 @@
 # 用于包装react指南, 查看 https://reflex.dev/docs/wrapping-react/overview/
 
 import reflex as rx
-from typing import Any, Dict, List, Union, Literal, TypedDict, Tuple
+from typing import Any, Dict, List, Union, Literal, TypedDict, Tuple, Callable, Iterable, TypeVar, Generic, Optional
 from reflex.components.component import NoSSRComponent
 # 要包装的某些库可能需要动态导入。
 # 这是因为它们可能与服务器端渲染（SSR）不兼容。
@@ -525,32 +525,19 @@ class Controls(ReactFlowLib):
     tag = "Controls"
 
     showZoom: rx.Var[bool] = True    # 是否显示放大和缩小按钮。这些按钮将调整视口 每次按下以固定量缩放。
-
     showFitView: rx.Var[bool] = True    # 是否显示适合视图按钮。默认情况下，此按钮将调整视口，以便 所有节点都同时可见。
-
     showInteractive: rx.Var[bool] = True    # 用于切换交互性的显示按钮
-
-    #fitViewOptions  # 自定义适合视图按钮的选项。这些选项与您将传递给 fitView 函数。
-
-    #onZoomIn    # 此外，还调用单击放大按钮时的默认缩放行为。
-
-    #onZoomOut   # 此外，还调用单击缩小按钮时的默认缩放行为。
-
-    #onFitView   # 单击“拟合视图”按钮时调用。如果未提供此选项，则视口将为 调整为所有节点都可见。
-
-    #onInteractiveChange # 单击交互式（锁定）按钮时调用。
-
-    #position    # 控件在窗格上的位置
-
-    #children    #
-
-    #style   # 应用于容器的样式
-
-    className: rx.Var[str]  # 应用于容器的类名
-
-    #aria_label: rx.Var[str] = 'React Flow controls'
-
-    #orientation: "horizontal" | "vertical" = 'vertical'
+    # 【以后再做】fitViewOptions: rx.Var[FitViewOptionsBase[Any]] = rx.Var.create(FitViewOptionsBase())  # https://reactflow.dev/api-reference/components/controls#fitviewoptions # 自定义适合视图按钮的选项。这些选项与您将传递给 fitView 函数。
+    onZoomIn: rx.Var[Callable[[], None]] = None    # 此外，还调用单击放大按钮时的默认缩放行为。
+    onZoomOut: rx.Var[Callable[[], None]] = None   # 此外，还调用单击缩小按钮时的默认缩放行为。
+    onFitView: rx.Var[Callable[[], None]] = None   # 单击“拟合视图”按钮时调用。如果未提供此选项，则视口将为 调整为所有节点都可见。
+    onInteractiveChange: rx.Var[Callable[[bool], None]] = None # 单击交互式（锁定）按钮时调用。
+    position: rx.Var[Literal['top-left', 'top-center', 'top-right', 'bottom-left', 'bottom-center', 'bottom-right']] = 'bottom-left'    # 控件在窗格上的位置
+    children: rx.Var[Union[rx.Component, str, int, float, Iterable[Any], bool, None]] = None    # 对于react-flow.Controls.children    类型的说明:https://github.com/DefinitelyTyped/DefinitelyTyped/blob/d7e13a7c7789d54cf8d601352517189e82baf502/types/react/index.d.ts#L264
+    style: rx.Var[Dict[str, Union[str, int]]] = {}   # 应用于容器的样式
+    className: rx.Var[str | None] = None  # 应用于容器的类名
+    aria_label: rx.Var[str] = 'React Flow controls'
+    orientation: rx.Var[Literal['horizontal', 'vertical']] = 'vertical'
 
 class EdgeLabelRenderer(ReactFlowLib):
     '''边缘基于 SVG。如果您想渲染更复杂的标签，您可以使用该组件访问基于 div 的渲染器。
