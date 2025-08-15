@@ -106,10 +106,21 @@ class State(rx.State):
 
 def index() -> rx.Component:
     return rx.vstack(
-        rx.text('12345'),
         react_flow(
-            #background(),
-            #controls(),
+            background(
+                id=None,
+                color='black',   # 图案的颜色。
+                bgColor='white',  # 背景颜色
+                className=None,  # 应用于容器的类
+                patternClassName=None,  # 应用于模式的类。
+                gap=20,  # 模式之间的间隙。传入元组可以控制 x 和 y 间隙 独立地。
+                size=None,
+                offset=0,  # 图案的偏移量
+                lineWidth=1,  # 绘制图案时使用的描边粗细。
+                variant=None,  # 图案的变体。
+                style={}  # 应用于容器的样式。
+            ),
+            controls(),
             nodes_draggable=True,
             nodes_connectable=True,
             on_connect=lambda e0: State.on_connect(e0),
@@ -136,13 +147,13 @@ def index() -> rx.Component:
             width="100%",
         ),
         rx.card(
-            react_flow(
-                nodes_draggable=True,
-                nodes_connectable=True,
-                nodes=State.example_node,
-                fit_view=True,
-            ),
-            rx.button('123', variant=)
+            #react_flow(
+            #    nodes_draggable=True,
+            #    nodes_connectable=True,
+            #    nodes=State.example_node,
+            #    fit_view=True,
+            #),
+
         ),
         height="30em",
         width="100%",

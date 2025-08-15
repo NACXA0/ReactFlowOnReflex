@@ -57,6 +57,13 @@ class ReactFlowLib(NoSSRComponent):
 
 # 基本(common)组件
 class ReactFlow(ReactFlowLib):
+    '''
+    - 虽然有不同的类型，不同的功能，但是要放到一起，为了效率，为了结构扁平化，都是可调用的方法。也有一些迁移出去成为了组件。
+    - 目录: 按照类型分类:
+        道具(Props) = React组件的输入参数
+        事件(Events) = 用户交互的响应入口
+        活动(Actions) = 组件实例的可调用方法
+    '''
 
     # region 下面是TypedDict 定义，规定数据形式.
     class Nodes(TypedDict):
@@ -95,10 +102,10 @@ class ReactFlow(ReactFlowLib):
         initialHeight: int | None = None
         parentId: str | None = None   # 父节点 ID，用于创建子流。
         zIndex: int | None = None
-        extent: Literal['parent'] | List[List[int, int]] | None = None   # 可以移动节点的边界。
+        extent: Literal['parent'] | List[List[int]] | None = None   # 可以移动节点的边界。
         expandParent: bool | None = None  # 如果将父节点拖动到 父节点的边界
         ariaLabel: str | None = None
-        origin: List[int, int] | None = None  # 节点相对于其位置的原点。
+        origin: List[int] | None = None  # 节点相对于其位置的原点。
         #handles:
         measured: Measured | None = None
         type: Union[Literal["input", "output", "default"], str] | None = None # 节点类型，有典型是离职，也可以自定义节点(https://reactflow.dev/learn/customization/custom-nodes)
@@ -146,7 +153,7 @@ class ReactFlow(ReactFlowLib):
         labelStyle: Any # 【以后在做】
         labelShowBg: bool
         labelBgStyle: Any # 【以后在做】
-        labelBgPadding: List[int, int]
+        labelBgPadding: List[int]
         labelBgBorderRadius: int
         style: Any # 【以后在做】
         className: str
@@ -195,7 +202,7 @@ class ReactFlow(ReactFlowLib):
         labelStyle: Any  # 【以后再做】   # 要应用于标签的自定义样式。
         labelShowBg: bool
         labelBgStyle: Any  # 【以后再做】
-        labelBgPadding: List[int, int]
+        labelBgPadding: List[int]
         labelBgBorderRadius: int
         style: Any  # 【以后再做】
         className: str
@@ -230,7 +237,7 @@ class ReactFlow(ReactFlowLib):
 
     autoPanOnNodeFocus: bool = True    # 当节点聚焦时，视口将平移
 
-    nodeOrigin: List[int, int] = [0, 0]  # 在将节点放置在流中或查找其位置时要使用的节点的原点。原点表示节点的左上角将放置在 和 位置。xy[0, 0]xy
+    nodeOrigin: List[int] = [0, 0]  # 在将节点放置在流中或查找其位置时要使用的节点的原点。原点表示节点的左上角将放置在 和 位置。xy[0, 0]xy
 
     proOptions: ProOptions  # 默认情况下，我们会在流的角落呈现一个小归因，该归因链接回项目。   任何人都可以自由删除此归属，无论他们是否是 Pro 订阅者 但我们要求您快速浏览我们的 https://reactflow.dev/learn/troubleshooting/remove-attribution  移除归因指南 在这样做之前。
 
@@ -255,10 +262,10 @@ class ReactFlow(ReactFlowLib):
     minZoom: float = 0.5  # 最小缩放级别。
     maxZoom: int = 2    # 最大变焦级别。
     snapToGrid: bool | None = None    # 启用后，节点将在拖动时捕捉到网格。
-    snapGrid: List[int, int] | None = None    # 如果启用，则此属性将配置节点将捕捉到的网格。snapToGrid
+    snapGrid: List[int] | None = None    # 如果启用，则此属性将配置节点将捕捉到的网格。snapToGrid
     onlyRenderVisibleElements: bool = False   # 你可以启用此优化来指示 React Flow 仅渲染视口中可见的节点和边缘。  当您拥有大量节点和 Edge 时，这可能会提高性能，但也会增加开销。
-    translateExtent: List[List[float, float]] | None = None    # 默认情况下，视口无限延伸。您可以使用此 prop 来设置边界。 第一对坐标是左上角的边界，第二对坐标是右下角的边界。
-    nodeExtent: List[List[float, float]] | None = None  # 默认情况下，节点可以放置在无限流上。您可以使用此 prop 来设置边界。 第一对坐标是左上角的边界，第二对坐标是右下角的边界。
+    translateExtent: List[List[float]] | None = None    # 默认情况下，视口无限延伸。您可以使用此 prop 来设置边界。 第一对坐标是左上角的边界，第二对坐标是右下角的边界。
+    nodeExtent: List[List[float]] | None = None  # 默认情况下，节点可以放置在无限流上。您可以使用此 prop 来设置边界。 第一对坐标是左上角的边界，第二对坐标是右下角的边界。
     preventScrolling: bool = True   # 禁用此属性将允许用户滚动页面，即使他们的指针位于流上。
     attributionPosition: Literal['top-left', 'top-center', 'top-right', 'bottom-left', 'bottom-center', 'bottom-right'] | None = None      # 默认情况下，React Flow 会在流程的右下角渲染一个小的归因。    您可以使用此道具来更改其位置，以防您想在那里放置其他东西。
     # endregion
@@ -271,19 +278,216 @@ class ReactFlow(ReactFlowLib):
     edgesReconnectable: bool = True # 创建边后是否可以更新。当此 prop 同时提供处理程序时，用户可以将现有边缘拖到新源或 目标。单个边可以使用其可重新连接属性覆盖此值。true  onReconnect
     # endregion
 
+    # region 下面是事件处理程序
+
+    # region 下面是一般(general)事件【二级分类】
+    onError: Any  # 【以后再做】
+    onInit: Any  # 【以后再做】
+    onDelete: Any  # 【以后再做】    # 删除节点或边缘时调用此事件处理程序。
+    onBeforeDelete: Any  # 【以后再做】
+    # endregion
+
+    # region 下面是节点(Node)事件【二级分类】
+    # on_node_click: rx.EventHandler[lambda e0: [e0]] # 当用户单击节点时，将调用此事件处理程序。
+
+    # on_node_doubleClick: rx.EventHandler[lambda e0: [e0]]   # 当用户双击节点时，将调用此事件处理程序。
+
+    # on_node_dragStart: rx.EventHandler[lambda e0: [e0]] # 当用户开始拖动节点时，将调用此事件处理程序。
+
+    # on_node_drag: rx.EventHandler[lambda e0: [e0]]      # 当用户拖动节点时，将调用此事件处理程序。
+
+    # on_node_dragStop: rx.EventHandler[lambda e0: [e0]]      # 当用户停止拖动节点时，将调用此事件处理程序。
+
+    # on_node_mouseEnter: rx.EventHandler[lambda e0: [e0]]    # 当用户的鼠标进入节点时，将调用此事件处理程序。
+
+    # on_node_mouseMove: rx.EventHandler[lambda e0: [e0]]     # 当用户的鼠标移动到节点上时，将调用此事件处理程序。
+
+    # on_node_mouseLeave: rx.EventHandler[lambda e0: [e0]]    # 当用户的鼠标离开节点时，将调用此事件处理程序。
+
+    # on_node_contextMenu: rx.EventHandler[lambda e0: [e0]]   # 当用户右键单击节点时，将调用此事件处理程序。
+
+    # on_nodes_delete: rx.EventHandler[lambda e0: [e0]]   # 删除节点时调用此事件处理程序。
+
+    on_nodes_change: rx.EventHandler[lambda e0: [e0]]  # 使用此事件处理程序向受控流添加交互性。它在节点拖动、选择和移动时调用。
+    # endregion
+
+    # region 下面是边缘(Edge)事件【二级分类】
+    # on_edge_click: rx.EventHandler[lambda e0: [e0]] # 当用户单击边缘时，将调用此事件处理程序。
+
+    # on_edge_double_click: rx.EventHandler[lambda e0: [e0]]   # 当用户双击边缘时，将调用此事件处理程序。
+
+    # on_edge_mouse_enter: rx.EventHandler[lambda e0: [e0]]    # 当用户的鼠标进入边缘时，将调用此事件处理程序。
+
+    # on_edge_mouse_move: rx.EventHandler[lambda e0: [e0]] # 当用户的鼠标移动到边缘上时，将调用此事件处理程序。
+
+    # on_edge_mouse_leave: rx.EventHandler[lambda e0: [e0]]    # 当用户的鼠标离开边缘时，将调用此事件处理程序
+
+    # on_edge_context_menu: rx.EventHandler[lambda e0: [e0]]   # 当用户右键单击边缘时，将调用此事件处理程序。
+
+    # on_reconnect: rx.EventHandler[lambda e0: [e0]] # 当可重新连接边的源或目标从当前节点拖动时，将调用此处理程序。即使边的源或目标最终没有更改，它也会触发。您可以使用该实用程序将连接转换为新边。reconnectEdge
+
+    # on_reconnect_start: rx.EventHandler[lambda e0: [e0]]    # 当用户开始拖动可编辑边的源或目标时，将触发此事件。
+
+    # on_reconnect_end: rx.EventHandler[lambda e0: [e0]]  # 当用户释放可编辑边缘的源或目标时，将触发此事件。它被称为即使未发生边缘更新。
+
+    # on_edges_delete: rx.EventHandler[lambda e0: [e0]]   # 删除边缘时调用此事件处理程序。
+
+    # on_edges_change: rx.EventHandler[lambda e0: [e0]]   # 使用此事件处理程序可向受控流添加交互性。它在边缘选择时称为?并删除。
+    # endregion
+
+    # region 下面是连接(Connect)事件【二级分类】
+    on_connect: rx.EventHandler[lambda e0: [e0]]  # 当连接线完成并且用户连接了两个节点时，此事件将随新连接一起触发。 您可以使用该实用程序将连接转换为完整的边。addEdge
+
+    # on_connect_start: rx.EventHandler[lambda e0: [e0]]  # 当用户开始拖动连接线时，将调用此事件处理程序。
+
+    # on_connect_end: rx.EventHandler[lambda e0: [e0]]    # 无论是否可以建立有效连接，此回调都会触发。您可以 使用第二个参数在连接时具有不同的行为 不成功。connectionState
+
+    # on_click_connect_start: rx.EventHandler[lambda e0: [e0]]    # 当用户点击拖动连接线时，将调用此事件处理程序。
+
+    # on_click_connect_end: rx.EventHandler[lambda e0: [e0]]  # 当用户松开拖动连接线时，将调用此事件处理程序。
+    # endregion
+
+    # region 窗格(Pane)事件【二级分类】
+    # on_move: rx.EventHandler[lambda e0: [e0]]  # 当用户平移或缩放视口时，将调用此事件处理程序。
+
+    # on_move_start: rx.EventHandler[lambda e0: [e0]] # 当用户开始平移或缩放视口时，将调用此事件处理程序。
+
+    # on_move_end: rx.EventHandler[lambda e0: [e0]]   # 当平移或缩放视口移动停止时调用此事件处理程序。 如果移动不是用户发起的，则事件参数将为 。null
+
+    # on_pane_click: rx.EventHandler[lambda e0: [e0]] # 当用户在窗格内单击时，将调用此事件处理程序。
+
+    # on_pane_context_menu: rx.EventHandler[lambda e0: [e0]]   # 当用户在窗格内右键单击时，将调用此事件处理程序。
+
+    # on_pane_scroll: rx.EventHandler[lambda e0: [e0]]    # 当用户在窗格内滚动时，将调用此事件处理程序。
+
+    # on_pane_mouse_move: rx.EventHandler[lambda e0: [e0]] # 当鼠标移动到窗格上时，将调用此事件处理程序。
+
+    # on_pane_mouse_enter: rx.EventHandler[lambda e0: [e0]]    # 当鼠标进入窗格时，将调用此事件处理程序。
+
+    # on_pane_mouse_leave: rx.EventHandler[lambda e0: [e0]]    # 当鼠标离开窗格时，将调用此事件处理程序。
+    # endregion
+
+    # region 选择(select)事件【二级分类】
+    # onSelectionChange: rx.EventHandler[lambda e0: [e0]]   # 当用户更改流中的选定元素组时，将调用此事件处理程序。
+
+    # onSelectionDragStart: rx.EventHandler[lambda e0: [e0]]    # 当用户开始拖动选择框时，将调用此事件处理程序。
+
+    # onSelectionDrag: rx.EventHandler[lambda e0: [e0]] # 当用户拖动选择框时，将调用此事件处理程序。
+
+    # onSelectionDragStop: rx.EventHandler[lambda e0: [e0]] # 当用户停止拖动选择框时，将调用此事件处理程序。
+
+    # onSelectionStart: rx.EventHandler[lambda e0: [e0]]    # 当用户选择开始时，将调用此事件处理程序。
+
+    # onSelectionEnd: rx.EventHandler[lambda e0: [e0]]  # 当用户选择结束时，将调用此事件处理程序。
+
+    # onSelectionContextMenu: rx.EventHandler[lambda e0: [e0]]  # 当用户右键单击节点选择时，将调用此事件处理程序。
+
+    # endregion
+
+    # endregion
+
+    # region 下面是交互(interaction)道具
+    nodes_draggable: rx.Var[bool]  # 控制所有节点是否应可拖动
+
+    nodes_connectable: rx.Var[bool]  # 控制所有节点是否应可连接
+
+    nodes_focusable: rx.Var[bool]  # 控制节点之间的焦点可以使用该键循环并使用该键进行选择
+
+    edgesFocusable: rx.Var[bool]  # 可以使用该键循环对边缘之间的焦点并使用该键进行选择。此选项可以通过设置其 prop 来覆盖单个边
+
+    elementsSelectable: rx.Var[bool]  # 可以通过单击元素（节点和边）来选择它们。此选项可以是 通过设置其 prop 被单个元素覆盖
+
+    autoPanOnConnect: rx.Var[bool]  # 当光标移动到 创建连接时的视口
+
+    autoPanOnNodeDragt: rx.Var[bool]  # 当光标移动到 视口，同时拖动节点。
+
+    autoPanSpeed: rx.Var[int]  # 拖动节点或选择框时视口平移的速度。
+
+    panOnDrag: rx.Var[bool] | rx.Var[int]  # 启用此属性允许用户通过单击和拖动来平移视口。 您还可以将此 prop 设置为数字数组，以限制哪些鼠标按钮可以激活平移。
+
+    selectionOnDrag: rx.Var[bool]  # 使用选择框选择多个元素，无需按 。selectionKey
+
+    selectionMode: rx.Var[str]  # 当设置为"partial"时，当用户通过单击并拖动节点创建选择框时，该节点 在框中仅部分仍处于选中状态  # 1. Full：仅当选择矩形完全包含节点时，才会选择节点 2. Partial：当选择矩形与节点部分重叠时，将选择节点
+
+    panOnScroll: rx.Var[bool]  # 控制视口是否应通过在容器内滚动来平移。 可以使用panOnScrollMode限制为特定方向。
+
+    panOnScrollSpeed: rx.Var[int]  # 控制滚动时平移视口的速度。 panOnScroll与道具一起使用。x
+
+    # panOnScrollMode: rx.Var[str]    # 启用时，此属性用于限制平移方向。 该选项允许向任何方向平移。    https://reactflow.dev/api-reference/types/pan-on-scroll-mode
+
+    zoomOnScroll: rx.Var[bool]  # 控制视口是否应通过在容器内滚动来缩放。
+
+    zoomOnPinch: rx.Var[bool]  # 控制视口是否应通过捏合触摸屏来缩放。
+
+    zoomOnDoubleClick: rx.Var[bool]  # 控制视口是否应通过双击流上的某个位置来缩放。
+
+    selectNodesOnDrag: rx.Var[bool]  # 在拖动时选择节点
+
+    elevateNodesOnSelect: rx.Var[bool]  # 在选择节点时提高节点的 z 索引
+
+    connectOnClick: rx.Var[bool]  # 该选项允许您单击或点击源句柄以启动连接 然后单击目标句柄以完成连接。connectOnClick    如果将此选项设置为 ，用户将需要将连接线拖动到目标 句柄以创建连接。false
+
+    # connectionMode  # 松散连接模式将允许您连接不同类型的手柄，包括 源到源连接。但是，它不支持目标到目标的连接。严格 模式仅允许源句柄和目标句柄之间的连接。 Strict: 只能从源句柄开始并在目标句柄结束时建立连接 # Loose: 可以在任何手柄之间进行连接，无论类型如何
+    # endregion
+
+    # region 下面是连接线(connection)道具
+    # connectionLineStyle # 要应用于连接线的样式。
+
+    # connectionLineType  # 用于连接线的边路径类型。 虽然创建的边可以是任何类型，但在创建边之前，React Flow 需要知道要为连接线渲染什么类型的路径！
+
+    connectionRadius: rx.Var[int]  # 手柄周围的半径，在其中放置连接线以创建新边。
+
+    # connectionLineComponent # React 组件用作连接线。
+
+    # connectionLineContainerStyle    # 要应用于连接线容器的样式。
+
+    # endregion
+
+    # region 下面是键盘(KBd)道具
+    # reflex里键盘案件的数据类型是str
+    deleteKeyCode: rx.Var[str] = None  # 按下键或弦将删除任何选定的节点和边。传递数组 表示可以按下的多个键。 例如，将删除按下任一键时的选定元素。["Delete", "Backspace"]
+
+    selectionKeyCode: rx.Var[str] = None  # 按住此键将允许您单击并拖动以在多个周围绘制一个选择框 节点和边。传递数组表示可以按下的多个键。   例如，当任一键为 压。["Shift", "Meta"]
+
+    multiSelectionKeyCode: rx.Var[str] = None  # 按下此键，您可以通过单击选择多个元素。
+
+    zoomActivationKeyCode: rx.Var[str] = None  # 如果设置了关键帧，则即使设置为 ，您也可以在按住该关键帧时缩放视口。panOnScrollfalse    通过将此属性设置为，您可以禁用此功能。null
+
+    panActivationKeyCode: rx.Var[str] = None  # 如果设置了关键帧，则即使设置为 ，也可以在按住该关键帧时平移视口。panOnScrollfalse 通过将此属性设置为，您可以禁用此功能。null
+
+    disableKeyboardA11y: rx.Var[bool] = False  # 您可以使用此 prop 禁用键盘辅助功能，例如选择节点或 使用箭头键移动选定节点。
+    # endregion
+
+    # region 下面是风格(Style)道具
+    noPanClassName: rx.Var[str]  # 如果画布中的某个元素没有阻止鼠标事件传播，则单击和拖动 该元素将平移视口。添加类可以防止此行为和此 prop 允许您更改该类的名称
+
+    noDragClassName: rx.Var[str]  # 如果节点是可拖动的，则单击并拖动该节点将在画布上移动它。添加 该类阻止了这种行为，并且这个 prop 允许你更改它的名称 类
+
+    noWheelClassName: rx.Var[str]  # 通常，当鼠标悬停在画布上时滚动鼠标滚轮将缩放视口。 将类添加到画布上的元素 n 将阻止此行为和此 prop 允许您更改该类的名称。"nowheel"
+    # endregion
+
+
+
+
+
+
 # 下面是组件
 
 class Background(ReactFlowLib):
     '''背景组件可以方便地渲染基于节点的 UI 中常见的不同类型的背景。它有三种变体：线条、点和十字。'''
     tag = "Background"
 
-    color: rx.Var[str]
-
-    gap: rx.Var[int]
-
-    size: rx.Var[int]
-
-    variant: rx.Var[str]
+    id: rx.Var[str | None] = None # 当页面上存在多个背景时，每个背景都应具有唯一的 ID。
+    color: rx.Var[str | None] = None  # 图案的颜色。
+    bgColor: rx.Var[str | None] = None    # 背景颜色
+    className: rx.Var[str | None] = None  # 应用于容器的类
+    patternClassName: rx.Var[str | None] = None   # 应用于模式的类。
+    gap: rx.Var[int] = 20    # 模式之间的间隙。传入元组可以控制 x 和 y 间隙 独立地。
+    size: rx.Var[Literal[1, 2, 3, 4, 5, 6] | None] = None   # https://reactflow.dev/api-reference/components/background#size
+    offset: rx.Var[Union[int, Tuple[int, int]]] = 0    # 图案的偏移量
+    lineWidth: rx.Var[int] = 1 # 绘制图案时使用的描边粗细。
+    variant: rx.Var[str | None] = None    # 图案的变体。
+    style: rx.Var[Dict[str, Union[str, int]]] = {} # 应用于容器的样式。
 
 class BaseEdge(ReactFlowLib):
     '''该组件在内部用于所有边。它可以是 在自定义边缘内使用，并处理不可见的辅助边和边缘标签 给你的。'''
@@ -445,199 +649,7 @@ controls = Controls.create
 
 
 
-# region 下面是事件处理程序
-class event_handel():   # https://reactflow.dev/api-reference/react-flow
 
-    # region 下面是一般(general)事件
-    onError: Any    # 【以后再做】
-    onInit: Any   # 【以后再做】
-    onDelete: Any   # 【以后再做】    # 删除节点或边缘时调用此事件处理程序。
-    onBeforeDelete: Any   # 【以后再做】
-    # endregion
-
-    # region 下面是节点(Node)事件
-    # on_node_click: rx.EventHandler[lambda e0: [e0]] # 当用户单击节点时，将调用此事件处理程序。
-
-    # on_node_doubleClick: rx.EventHandler[lambda e0: [e0]]   # 当用户双击节点时，将调用此事件处理程序。
-
-    # on_node_dragStart: rx.EventHandler[lambda e0: [e0]] # 当用户开始拖动节点时，将调用此事件处理程序。
-
-    # on_node_drag: rx.EventHandler[lambda e0: [e0]]      # 当用户拖动节点时，将调用此事件处理程序。
-
-    # on_node_dragStop: rx.EventHandler[lambda e0: [e0]]      # 当用户停止拖动节点时，将调用此事件处理程序。
-
-    # on_node_mouseEnter: rx.EventHandler[lambda e0: [e0]]    # 当用户的鼠标进入节点时，将调用此事件处理程序。
-
-    # on_node_mouseMove: rx.EventHandler[lambda e0: [e0]]     # 当用户的鼠标移动到节点上时，将调用此事件处理程序。
-
-    # on_node_mouseLeave: rx.EventHandler[lambda e0: [e0]]    # 当用户的鼠标离开节点时，将调用此事件处理程序。
-
-    # on_node_contextMenu: rx.EventHandler[lambda e0: [e0]]   # 当用户右键单击节点时，将调用此事件处理程序。
-
-    # on_nodes_delete: rx.EventHandler[lambda e0: [e0]]   # 删除节点时调用此事件处理程序。
-
-    on_nodes_change: rx.EventHandler[lambda e0: [e0]]  # 使用此事件处理程序向受控流添加交互性。它在节点拖动、选择和移动时调用。
-    # endregion
-
-    # region 下面是边缘(Edge)事件
-    # on_edge_click: rx.EventHandler[lambda e0: [e0]] # 当用户单击边缘时，将调用此事件处理程序。
-
-    # on_edge_double_click: rx.EventHandler[lambda e0: [e0]]   # 当用户双击边缘时，将调用此事件处理程序。
-
-    # on_edge_mouse_enter: rx.EventHandler[lambda e0: [e0]]    # 当用户的鼠标进入边缘时，将调用此事件处理程序。
-
-    # on_edge_mouse_move: rx.EventHandler[lambda e0: [e0]] # 当用户的鼠标移动到边缘上时，将调用此事件处理程序。
-
-    # on_edge_mouse_leave: rx.EventHandler[lambda e0: [e0]]    # 当用户的鼠标离开边缘时，将调用此事件处理程序
-
-    # on_edge_context_menu: rx.EventHandler[lambda e0: [e0]]   # 当用户右键单击边缘时，将调用此事件处理程序。
-
-    # on_reconnect: rx.EventHandler[lambda e0: [e0]] # 当可重新连接边的源或目标从当前节点拖动时，将调用此处理程序。即使边的源或目标最终没有更改，它也会触发。您可以使用该实用程序将连接转换为新边。reconnectEdge
-
-    # on_reconnect_start: rx.EventHandler[lambda e0: [e0]]    # 当用户开始拖动可编辑边的源或目标时，将触发此事件。
-
-    # on_reconnect_end: rx.EventHandler[lambda e0: [e0]]  # 当用户释放可编辑边缘的源或目标时，将触发此事件。它被称为即使未发生边缘更新。
-
-    # on_edges_delete: rx.EventHandler[lambda e0: [e0]]   # 删除边缘时调用此事件处理程序。
-
-    # on_edges_change: rx.EventHandler[lambda e0: [e0]]   # 使用此事件处理程序可向受控流添加交互性。它在边缘选择时称为?并删除。
-    # endregion
-
-    # region 下面是连接(Connect)事件
-    on_connect: rx.EventHandler[lambda e0: [e0]]  # 当连接线完成并且用户连接了两个节点时，此事件将随新连接一起触发。 您可以使用该实用程序将连接转换为完整的边。addEdge
-
-    # on_connect_start: rx.EventHandler[lambda e0: [e0]]  # 当用户开始拖动连接线时，将调用此事件处理程序。
-
-    # on_connect_end: rx.EventHandler[lambda e0: [e0]]    # 无论是否可以建立有效连接，此回调都会触发。您可以 使用第二个参数在连接时具有不同的行为 不成功。connectionState
-
-    # on_click_connect_start: rx.EventHandler[lambda e0: [e0]]    # 当用户点击拖动连接线时，将调用此事件处理程序。
-
-    # on_click_connect_end: rx.EventHandler[lambda e0: [e0]]  # 当用户松开拖动连接线时，将调用此事件处理程序。
-    # endregion
-
-    # region 窗格(Pane)事件
-    # on_move: rx.EventHandler[lambda e0: [e0]]  # 当用户平移或缩放视口时，将调用此事件处理程序。
-
-    # on_move_start: rx.EventHandler[lambda e0: [e0]] # 当用户开始平移或缩放视口时，将调用此事件处理程序。
-
-    # on_move_end: rx.EventHandler[lambda e0: [e0]]   # 当平移或缩放视口移动停止时调用此事件处理程序。 如果移动不是用户发起的，则事件参数将为 。null
-
-    # on_pane_click: rx.EventHandler[lambda e0: [e0]] # 当用户在窗格内单击时，将调用此事件处理程序。
-
-    # on_pane_context_menu: rx.EventHandler[lambda e0: [e0]]   # 当用户在窗格内右键单击时，将调用此事件处理程序。
-
-    # on_pane_scroll: rx.EventHandler[lambda e0: [e0]]    # 当用户在窗格内滚动时，将调用此事件处理程序。
-
-    # on_pane_mouse_move: rx.EventHandler[lambda e0: [e0]] # 当鼠标移动到窗格上时，将调用此事件处理程序。
-
-    # on_pane_mouse_enter: rx.EventHandler[lambda e0: [e0]]    # 当鼠标进入窗格时，将调用此事件处理程序。
-
-    # on_pane_mouse_leave: rx.EventHandler[lambda e0: [e0]]    # 当鼠标离开窗格时，将调用此事件处理程序。
-    # endregion
-
-    # region 选择(select)事件
-    # onSelectionChange: rx.EventHandler[lambda e0: [e0]]   # 当用户更改流中的选定元素组时，将调用此事件处理程序。
-
-    # onSelectionDragStart: rx.EventHandler[lambda e0: [e0]]    # 当用户开始拖动选择框时，将调用此事件处理程序。
-
-    # onSelectionDrag: rx.EventHandler[lambda e0: [e0]] # 当用户拖动选择框时，将调用此事件处理程序。
-
-    # onSelectionDragStop: rx.EventHandler[lambda e0: [e0]] # 当用户停止拖动选择框时，将调用此事件处理程序。
-
-    # onSelectionStart: rx.EventHandler[lambda e0: [e0]]    # 当用户选择开始时，将调用此事件处理程序。
-
-    # onSelectionEnd: rx.EventHandler[lambda e0: [e0]]  # 当用户选择结束时，将调用此事件处理程序。
-
-    # onSelectionContextMenu: rx.EventHandler[lambda e0: [e0]]  # 当用户右键单击节点选择时，将调用此事件处理程序。
-
-    # endregion
-
-    # region 下面是交互(interaction)道具
-    nodes_draggable: rx.Var[bool]  # 控制所有节点是否应可拖动
-
-    nodes_connectable: rx.Var[bool]  # 控制所有节点是否应可连接
-
-    nodes_focusable: rx.Var[bool]  # 控制节点之间的焦点可以使用该键循环并使用该键进行选择
-
-    edgesFocusable: rx.Var[bool]  # 可以使用该键循环对边缘之间的焦点并使用该键进行选择。此选项可以通过设置其 prop 来覆盖单个边
-
-    elementsSelectable: rx.Var[bool]  # 可以通过单击元素（节点和边）来选择它们。此选项可以是 通过设置其 prop 被单个元素覆盖
-
-    autoPanOnConnect: rx.Var[bool]  # 当光标移动到 创建连接时的视口
-
-    autoPanOnNodeDragt: rx.Var[bool]  # 当光标移动到 视口，同时拖动节点。
-
-    autoPanSpeed: rx.Var[int]  # 拖动节点或选择框时视口平移的速度。
-
-    panOnDrag: rx.Var[bool] | rx.Var[int]  # 启用此属性允许用户通过单击和拖动来平移视口。 您还可以将此 prop 设置为数字数组，以限制哪些鼠标按钮可以激活平移。
-
-    selectionOnDrag: rx.Var[bool]  # 使用选择框选择多个元素，无需按 。selectionKey
-
-    selectionMode: rx.Var[
-        str]  # 当设置为"partial"时，当用户通过单击并拖动节点创建选择框时，该节点 在框中仅部分仍处于选中状态  # 1. Full：仅当选择矩形完全包含节点时，才会选择节点 2. Partial：当选择矩形与节点部分重叠时，将选择节点
-
-    panOnScroll: rx.Var[bool]  # 控制视口是否应通过在容器内滚动来平移。 可以使用panOnScrollMode限制为特定方向。
-
-    panOnScrollSpeed: rx.Var[int]  # 控制滚动时平移视口的速度。 panOnScroll与道具一起使用。x
-
-    # panOnScrollMode: rx.Var[str]    # 启用时，此属性用于限制平移方向。 该选项允许向任何方向平移。    https://reactflow.dev/api-reference/types/pan-on-scroll-mode
-
-    zoomOnScroll: rx.Var[bool]  # 控制视口是否应通过在容器内滚动来缩放。
-
-    zoomOnPinch: rx.Var[bool]  # 控制视口是否应通过捏合触摸屏来缩放。
-
-    zoomOnDoubleClick: rx.Var[bool]  # 控制视口是否应通过双击流上的某个位置来缩放。
-
-    selectNodesOnDrag: rx.Var[bool]  # 在拖动时选择节点
-
-    elevateNodesOnSelect: rx.Var[bool]  # 在选择节点时提高节点的 z 索引
-
-    connectOnClick: rx.Var[
-        bool]  # 该选项允许您单击或点击源句柄以启动连接 然后单击目标句柄以完成连接。connectOnClick    如果将此选项设置为 ，用户将需要将连接线拖动到目标 句柄以创建连接。false
-
-    # connectionMode  # 松散连接模式将允许您连接不同类型的手柄，包括 源到源连接。但是，它不支持目标到目标的连接。严格 模式仅允许源句柄和目标句柄之间的连接。 Strict: 只能从源句柄开始并在目标句柄结束时建立连接 # Loose: 可以在任何手柄之间进行连接，无论类型如何
-    # endregion
-
-    # region 下面是连接线(connection)道具
-    # connectionLineStyle # 要应用于连接线的样式。
-
-    # connectionLineType  # 用于连接线的边路径类型。 虽然创建的边可以是任何类型，但在创建边之前，React Flow 需要知道要为连接线渲染什么类型的路径！
-
-    connectionRadius: rx.Var[int]  # 手柄周围的半径，在其中放置连接线以创建新边。
-
-    # connectionLineComponent # React 组件用作连接线。
-
-    # connectionLineContainerStyle    # 要应用于连接线容器的样式。
-
-    # endregion
-
-    # region 下面是键盘(KBd)道具
-    # reflex里键盘案件的数据类型是str
-    deleteKeyCode: rx.Var[str] = None  # 按下键或弦将删除任何选定的节点和边。传递数组 表示可以按下的多个键。 例如，将删除按下任一键时的选定元素。["Delete", "Backspace"]
-
-    selectionKeyCode: rx.Var[
-        str] = None  # 按住此键将允许您单击并拖动以在多个周围绘制一个选择框 节点和边。传递数组表示可以按下的多个键。   例如，当任一键为 压。["Shift", "Meta"]
-
-    multiSelectionKeyCode: rx.Var[str] = None  # 按下此键，您可以通过单击选择多个元素。
-
-    zoomActivationKeyCode: rx.Var[
-        str] = None  # 如果设置了关键帧，则即使设置为 ，您也可以在按住该关键帧时缩放视口。panOnScrollfalse    通过将此属性设置为，您可以禁用此功能。null
-
-    panActivationKeyCode: rx.Var[
-        str] = None  # 如果设置了关键帧，则即使设置为 ，也可以在按住该关键帧时平移视口。panOnScrollfalse 通过将此属性设置为，您可以禁用此功能。null
-
-    disableKeyboardA11y: rx.Var[bool] = False  # 您可以使用此 prop 禁用键盘辅助功能，例如选择节点或 使用箭头键移动选定节点。
-    # endregion
-
-    # region 下面是风格(Style)道具
-    noPanClassName: rx.Var[str]  # 如果画布中的某个元素没有阻止鼠标事件传播，则单击和拖动 该元素将平移视口。添加类可以防止此行为和此 prop 允许您更改该类的名称
-
-    noDragClassName: rx.Var[str]  # 如果节点是可拖动的，则单击并拖动该节点将在画布上移动它。添加 该类阻止了这种行为，并且这个 prop 允许你更改它的名称 类
-
-    noWheelClassName: rx.Var[str]  # 通常，当鼠标悬停在画布上时滚动鼠标滚轮将缩放视口。 将类添加到画布上的元素 n 将阻止此行为和此 prop 允许您更改该类的名称。"nowheel"
-    # endregion
-
-# endregion
 
 
 
