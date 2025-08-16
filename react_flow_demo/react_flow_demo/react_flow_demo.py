@@ -104,7 +104,21 @@ class State(rx.State):
     def reset_var(self):
         self.reset()
 
+    # 占位符事件处理器——为事件处理器提供一个虚假的接入点
+    @rx.event
+    def fake_event_handel(self, *args, **kwargs):
+        print('触发了占位符事件处理器.******************************')
+        print("位置参数:") if args else None
+        for arg in args:
+            print(f'触发事件数据类型:{type(arg)}, 触发事件数据:{arg}')
+
+        print("\n关键字参数:") if kwargs else None
+        for key, value in kwargs.items():
+            print(f"{key}: {value}")
+
+
 # 下面是一级组件
+# 背景
 def component_background() -> rx.Component:
     '''这个做的比较完善，可以参考'''
     return background(
@@ -121,7 +135,7 @@ def component_background() -> rx.Component:
         style={}  # 应用于容器的样式。
     )
 
-
+# 控制组件
 def component_controls() -> rx.Component:
     return controls(
         showZoom=True,
@@ -141,19 +155,148 @@ def component_controls() -> rx.Component:
     )
 
 
+# react_flow主要部分——完全版
+def component_react_flow_full() -> rx.Component:
+    return react_flow(
+        # region 常见道具
+        width = None,
+        height = None,
+        nodes = State.nodes,
+        edges = State.nodes,
+        defaultEdges = None,
+        paneClickDistance = 0,
+        nodeClickDistance = 0,
+        nodeTypes = 'default',
+        edgeTypes = 'default',
+        autoPanOnNodeFocus = True,
+        nodeOrigin = [0, 0],
+        proOptions = None,
+        nodeDragThreshold = 1,
+        connectionDragThreshold = 1,
+        colorMode = 'light',
+        debug = False,
+        ariaLabelConfig = None,
+        # endregion
+
+        # region 视觉(viewport)道具
+        defaultViewport = { 'x': 0, 'y': 0, 'zoom': 1 },
+        viewport = None,
+        onViewportChange = None,
+        fit_view = None,
+        fitViewOptions = None,
+        minZoom = 0.5,
+        maxZoom = 2.0,
+        snapToGrid = None,
+        snapGrid = None,
+        onlyRenderVisibleElements = False,
+        translateExtent = None,
+        nodeExtent = None,
+        preventScrolling = True,
+        attributionPosition = 'bottom-right',
+        # endregion
+
+        # region 边缘(edge)道具
+        elevateEdgesOnSelect = None,
+        defaultMarkerColor = None,
+        defaultEdgeOptions = None,
+        reconnectRadius = 10,
+        edgesReconnectable = None,
+        # endregion
+
+        # region 事件处理程序——一般(general)事件
+        onError=State.fake_event_handel('onError'),
+        onInit=State.fake_event_handel('onInit'),
+        onDelete=State.fake_event_handel('onDelete'),
+        onBeforeDelete=State.fake_event_handel('onBeforeDelete'),
+        # endregion
+
+        # region 事件处理程序——节点(Node)事件
+        # endregion
+
+        # region 事件处理程序——节点(Node)事件
+        on_nodes_change=lambda e0: State.on_nodes_change(e0),
+        # endregion
+
+        # region 事件处理程序——边缘(Edge)事件
+        # endregion
+
+        # region 事件处理程序——连接(Connect)事件
+        on_connect=lambda e0: State.on_connect(e0),
+        # endregion
+
+        # region 事件处理程序——窗格(Pane)事件
+        # endregion
+
+        # region 事件处理程序——选择(select)事件
+        # endregion
+
+        # region 下面是交互(interaction)道具
+        nodes_draggable = True,
+        nodes_connectable = True,
+        nodes_focusable = True,
+        edgesFocusable = True,
+        elementsSelectable = True,
+        autoPanOnConnect = True,
+        autoPanOnNodeDragt = True,
+        autoPanSpeed = 15,
+        panOnDrag = True,
+        selectionOnDrag = False,
+        selectionMode = 'full',
+        panOnScroll = False,
+        panOnScrollSpeed = 0.5,
+        panOnScrollMode = 'free',
+        zoomOnScroll = True,
+        zoomOnPinch = True,
+        zoomOnDoubleClick = True,
+        selectNodesOnDrag = True,
+        elevateNodesOnSelect = True,
+        connectOnClick = True,
+        connectionMode = 'strict',
+        # endregion
+
+        # region 下面是连接线(connection)道具
+        connectionLineStyle = {},
+        connectionLineType = 'default',
+        connectionRadius = 20,
+        # connectionLineComponent
+        connectionLineContainerStyle = {},
+
+        # endregion
+
+        # region 下面是键盘(KBd)道具
+        deleteKeyCode = 'Backspace',
+        selectionKeyCode = 'Shift',
+        multiSelectionKeyCode = "'Meta' for macOS, 'Control' for other systems",
+        zoomActivationKeyCode = "'Meta' for macOS, 'Control' for other systems",
+        panActivationKeyCode = 'Space',
+        disableKeyboardA11y = False,
+        # endregion
+
+        # region 下面是风格(Style)道具
+        noPanClassName = 'nopan',
+        noDragClassName = 'nodrag',
+        noWheelClassName = 'nowheel'
+        # endregion
+
+    )
+
+# react_flo主要部分w——使用版本  从完全版选取部分
+def component_react_flow() -> rx.Component:
+    return react_flow(
+        component_background(),
+        component_controls(),
+        nodes_draggable=True,
+        nodes_connectable=True,
+        on_connect=lambda e0: State.on_connect(e0),
+        on_nodes_change=lambda e0: State.on_nodes_change(e0),
+        nodes=State.nodes,
+        edges=State.nodes,
+        fit_view=True,
+    )
+
 def index() -> rx.Component:
     return rx.vstack(
-        react_flow(
-            component_background(),
-            component_controls(),
-            nodes_draggable=True,
-            nodes_connectable=True,
-            on_connect=lambda e0: State.on_connect(e0),
-            on_nodes_change=lambda e0: State.on_nodes_change(e0),
-            nodes=State.nodes,
-            edges=State.edges,
-            fit_view=True,
-        ),
+        component_react_flow(),
 
 
         rx.button(

@@ -22,8 +22,20 @@ pip install reflex-react-flow
     - 不需要加上rx.Var.create()  reflex会自动对直接赋值的字面量字典自动进行 Var 包装
   - 定义数据类型时。react-flow的数据类型 () => void 在这里定义为 rx.Var[Callable[[], None]] = None      需要 from typing import Callable
   - 定义数据类型时。react-flow的数据类型 (interactiveStatus: boolean) => void  在这里定义为 rx.Var[Callable[[bool], None]] = None     需要 from typing import Callable
-  - 
-
+  - 定义数据类型时。react-flow的数据类型 TypedDict  就是需要单独定义一个class的类型，需要rx.Var[]包装class，但class里面不要: 
+    ```python
+    from typing import TypedDict
+    import reflex as rx
+    
+    class XYPosition(TypedDict):
+        x: int  # 这里不要包装rx.Var[]
+        y: int  # 这里不要包装rx.Var[]
+    
+    class MyComponent(rx.Component):
+        #          这里要包装rx.Var[]        默认值
+        position: rx.Var[XYPosition] = {"x": 0, "y": 0} 
+    ```
+  -
 
 
 
