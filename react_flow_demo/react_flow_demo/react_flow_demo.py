@@ -2,7 +2,7 @@
 
 from rxconfig import config # 这里是正确的，虽然有红线  from rxconfig import config
 import reflex as rx
-from reflex_react_flow import react_flow, background, controls
+from reflex_react_flow import react_flow, background, controls#base_edge, control_button, controls#, edge_label_renderer, edge_text, handle, mini_map, node_resize_control, node_resizer, node_toolbar, panel, viewport_portal
 import random
 from collections import defaultdict
 from typing import Any, Dict, List
@@ -117,7 +117,7 @@ class State(rx.State):
             print(f"{key}: {value}")
 
 
-# 下面是一级组件
+# region 下面是一级组件
 # 背景
 def component_background() -> rx.Component:
     '''这个做的比较完善，可以参考'''
@@ -134,29 +134,62 @@ def component_background() -> rx.Component:
         variant=None,  # 图案的变体。
         style={}  # 应用于容器的样式。
     )
-
-# 控制组件
+#
+def component_base_edge() -> rx.Component:
+    return #base_edge()
+# 控制按钮
+def component_control_button() -> rx.Component:
+    return #control_button()
+# 控制
 def component_controls() -> rx.Component:
     return controls(
-        showZoom=True,
-        showFitView=True,
-        showInteractive=True,
+        #showZoom=True,
+        #showFitView=True,
+        #showInteractive=True,
         # fitViewOptions=None   【以后再说】
-        onZoomIn=None,
-        onZoomOut=None,
-        onFitView=None,
-        onInteractiveChange=None,
-        position='bottom-left',
-        children=None,
-        style={},  # 应用于容器的样式
-        className=None,  # 应用于容器的类名
-        aria_label='React Flow controls',
-        orientation='vertical'
+        #onZoomIn=None,
+        #onZoomOut=None,
+        #onFitView=None,
+        #onInteractiveChange=None,
+        #position='bottom-left',
+        #children=None,
+        #style={},  # 应用于容器的样式
+        #className=None,  # 应用于容器的类名
+        #aria_label='React Flow controls',
+        #orientation='vertical'
+
     )
+#
+def component_edge_label_renderer() -> rx.Component:
+    return #edge_label_renderer()
+#
+def component_edge_text() -> rx.Component:
+    return #edge_text()
+# 连接点
+def component_handle() -> rx.Component:
+    return #handle()
+# 地图
+def component_mini_map() -> rx.Component:
+    return #mini_map()
+#
+def component_node_resize_control() -> rx.Component:
+    return #node_resize_control()
+#
+def component_node_resizer() -> rx.Component:
+    return #node_resizer()
+#
+def component_node_toolbar() -> rx.Component:
+    return #node_toolbar()
+#
+def component_panel() -> rx.Component:
+    return #panel()
+#
+def component_viewport_portal() -> rx.Component:
+    return #viewport_portal()
 
 
 # react_flow主要部分——完全版
-def component_react_flow_full() -> rx.Component:
+def component_react_flow() -> rx.Component:
     return react_flow(
         # region 常见道具
         width = None,
@@ -260,7 +293,6 @@ def component_react_flow_full() -> rx.Component:
         connectionRadius = 20,
         # connectionLineComponent
         connectionLineContainerStyle = {},
-
         # endregion
 
         # region 下面是键盘(KBd)道具
@@ -280,24 +312,30 @@ def component_react_flow_full() -> rx.Component:
 
     )
 
-# react_flo主要部分w——使用版本  从完全版选取部分
-def component_react_flow() -> rx.Component:
+# react_flow主要部分——使用版本  从完全版选取部分
+def component_react_flow_demo() -> rx.Component:
     return react_flow(
-        component_background(),
-        component_controls(),
+        # 调用组件部分
+        background(),
+        controls(),
+        做到这里了，1. 组件需要调用的 2.尽量在运行的时候调试，不然真的追踪不到报错 3. hooks暂时放一放
+        # 本身参数部分
         nodes_draggable=True,
         nodes_connectable=True,
         on_connect=lambda e0: State.on_connect(e0),
         on_nodes_change=lambda e0: State.on_nodes_change(e0),
         nodes=State.nodes,
-        edges=State.nodes,
-        fit_view=True,
+        edges=State.edges,
+        fit_view=True
     )
 
+
+# endregion
+
+# 下面是页面组件
 def index() -> rx.Component:
     return rx.vstack(
-        component_react_flow(),
-
+        component_react_flow_demo(),
 
         rx.button(
             "清除图像",
@@ -314,19 +352,9 @@ def index() -> rx.Component:
             on_click=State.reset_var,
             width="100%",
         ),
-        rx.card(
-            #react_flow(
-            #    nodes_draggable=True,
-            #    nodes_connectable=True,
-            #    nodes=State.example_node,
-            #    fit_view=True,
-            #),
-
-        ),
         height="30em",
         width="100%",
     )
-
 
 
 

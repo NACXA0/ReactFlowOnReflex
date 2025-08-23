@@ -30,7 +30,7 @@ class ReactFlowLib(NoSSRComponent):
 
     # 如果要包装与项目中的构件具有相同标记的其他构件
     # 可以使用别名来区分它们，并避免命名冲突。
-    # alias = "OtherReactFlow"
+    #alias = "react-flow"   # 这个不能启用，一启用就报错
 
     # React组件的道具。
     # 注意：当Reflex将组件编译为Javascript时，
@@ -162,6 +162,13 @@ class ReactFlow(ReactFlowLib):
         ariaRole: Any # 【以后在做】  边缘的 ARIA 角色属性，用于辅助功能。
         domAttributes: Any # 【以后在做】
 
+    class CommonProps(rx.PropsBase):
+        """HTML div元素道具的包装器，不包括onError"""
+        # 这里可以定义div元素的其他属性
+        id: rx.Var[str]
+        className: rx.Var[str]
+        style: rx.Var[dict]
+
     class ProOptions(TypedDict):
         account: str
         hideAttribution: bool
@@ -235,39 +242,23 @@ class ReactFlow(ReactFlowLib):
 
     # region 常见道具
     width: rx.Var[int | None] = None  # 为Flow设置固定宽度。
-
     height: rx.Var[int | None] = None # 设置Flow的固定高度。
-
     nodes: rx.Var[Nodes | List[Dict[str, Any]]] | None = None # 原版是这样，但我觉得包括起来更好 【未测试】Nodes | rx.Var[List[Dict[str, Any]]] | None = None
-
-    edges: rx.Var[List[Dict[str, Any]]] | None = None
-
+    edges: rx.Var[Edges | List[Dict[str, Any]]] | None = None
     defaultEdges: rx.Var[Nodes | List[Dict[str, Any]]] | None = None  # 要在不受控制的流中渲染的初始边。
-
     paneClickDistance: rx.Var[int] = 0  # 鼠标可以在鼠标向下/向上之间移动的距离，这将触发单击
-
     nodeClickDistance: rx.Var[int] = 0  # 鼠标可以在鼠标向下/向上之间移动的距离，这将触发单击。
-
     nodeTypes: rx.Var[Literal['input', 'default', 'output', 'group']] = 'default'   # 要在流中提供的自定义节点类型。 React Flow 将节点的类型与对象中的组件进行匹配
-
     edgeTypes: rx.Var[Literal['default', 'straight', 'step', 'smoothstep', 'simplebezier']] = 'default' # 流中可用的自定义边缘类型。 React Flow 将边缘的类型与对象中的组件进行匹配。edgeTypes
-
     autoPanOnNodeFocus: rx.Var[bool] = True    # 当节点聚焦时，视口将平移
-
     nodeOrigin: rx.Var[List[int]] = [0, 0]  # 在将节点放置在流中或查找其位置时要使用的节点的原点。原点表示节点的左上角将放置在 和 位置。xy[0, 0]xy
-
     proOptions: rx.Var[ProOptions | None] = None  # 默认情况下，我们会在流的角落呈现一个小归因，该归因链接回项目。   任何人都可以自由删除此归属，无论他们是否是 Pro 订阅者 但我们要求您快速浏览我们的 https://reactflow.dev/learn/troubleshooting/remove-attribution  移除归因指南 在这样做之前。
-
     nodeDragThreshold: rx.Var[int] = 1  # 如果阈值大于零，则可以延迟节点拖动事件。 如果阈值等于 1，则需要在触发拖动事件之前将节点拖动 1 像素。 1 是默认值，因此点击不会触发拖动事件。
-
     connectionDragThreshold: rx.Var[int] = 1    # 在连接线开始拖动之前，鼠标必须移动的阈值（以像素为单位）。 这对于防止单击手柄时意外连接非常有用。
-
     colorMode: rx.Var[Literal['light', 'dark', 'system']] = 'light'   # 控制用于设置流样式的配色方案。
-
     debug: rx.Var[bool] = False # 一些调试信息将记录到控制台，例如触发了哪些事件。
-
     ariaLabelConfig: rx.Var[Any | None] = None    # 【以后再做】 # 可自定义标签、描述和 UI 文本的配置。提供的键将覆盖相应的默认值。 允许本地化、自定义 ARIA 描述、控件标签、小地图标签和其他 UI 字符串。
-
+    common_props: rx.Var[CommonProps]  # https://reactflow.dev/api-reference/react-flow#props
     # endregion
 
     # region 视觉(viewport)道具
@@ -285,6 +276,7 @@ class ReactFlow(ReactFlowLib):
     nodeExtent: rx.Var[List[List[float]] | None] = None  # 默认情况下，节点可以放置在无限流上。您可以使用此 prop 来设置边界。 第一对坐标是左上角的边界，第二对坐标是右下角的边界。
     preventScrolling:rx.Var[ bool] = True   # 禁用此属性将允许用户滚动页面，即使他们的指针位于流上。
     attributionPosition: rx.Var[Literal['top-left', 'top-center', 'top-right', 'bottom-left', 'bottom-center', 'bottom-right']] = 'bottom-right'     # 默认情况下，React Flow 会在流程的右下角渲染一个小的归因。    您可以使用此道具来更改其位置，以防您想在那里放置其他东西。
+    # ..props
     # endregion
 
     # region 边缘(edge)道具
@@ -391,85 +383,51 @@ class ReactFlow(ReactFlowLib):
 
     # endregion
 
-
-
     # region 下面是交互(interaction)道具
     nodes_draggable: rx.Var[bool] = True  # 控制所有节点是否应可拖动
-
     nodes_connectable: rx.Var[bool] = True  # 控制所有节点是否应可连接
-
     nodes_focusable: rx.Var[bool] = True  # 控制节点之间的焦点可以使用该键循环并使用该键进行选择
-
     edgesFocusable: rx.Var[bool] = True  # 可以使用该键循环对边缘之间的焦点并使用该键进行选择。此选项可以通过设置其 prop 来覆盖单个边
-
     elementsSelectable: rx.Var[bool] = True  # 可以通过单击元素（节点和边）来选择它们。此选项可以是 通过设置其 prop 被单个元素覆盖
-
     autoPanOnConnect: rx.Var[bool] = True  # 当光标移动到 创建连接时的视口
-
     autoPanOnNodeDragt: rx.Var[bool] = True  # 当光标移动到 视口，同时拖动节点。
-
     autoPanSpeed: rx.Var[int] = 15  # 拖动节点或选择框时视口平移的速度。
-
     panOnDrag: rx.Var[bool] | rx.Var[int] = True  # 启用此属性允许用户通过单击和拖动来平移视口。 您还可以将此 prop 设置为数字数组，以限制哪些鼠标按钮可以激活平移。
-
     selectionOnDrag: rx.Var[bool] = False  # 使用选择框选择多个元素，无需按 。selectionKey
-
     selectionMode: rx.Var[str] = 'full'  # 当设置为"partial"时，当用户通过单击并拖动节点创建选择框时，该节点 在框中仅部分仍处于选中状态  # 1. Full：仅当选择矩形完全包含节点时，才会选择节点 2. Partial：当选择矩形与节点部分重叠时，将选择节点
-
     panOnScroll: rx.Var[bool] = False  # 控制视口是否应通过在容器内滚动来平移。 可以使用panOnScrollMode限制为特定方向。
-
-    panOnScrollSpeed: rx.Var[int] = 0.5  # 控制滚动时平移视口的速度。 panOnScroll与道具一起使用。x
-
+    panOnScrollSpeed: rx.Var[float] = 0.5  # 控制滚动时平移视口的速度。 panOnScroll与道具一起使用。x
     panOnScrollMode: rx.Var[Literal['free', 'vertical', 'horizontal']] = 'free'    # 启用时，此属性用于限制平移方向。 该选项允许向任何方向平移。    https://reactflow.dev/api-reference/types/pan-on-scroll-mode
-
     zoomOnScroll: rx.Var[bool] = True  # 控制视口是否应通过在容器内滚动来缩放。
-
     zoomOnPinch: rx.Var[bool] = True  # 控制视口是否应通过捏合触摸屏来缩放。
-
     zoomOnDoubleClick: rx.Var[bool] = True  # 控制视口是否应通过双击流上的某个位置来缩放。
-
     selectNodesOnDrag: rx.Var[bool] = True  # 在拖动时选择节点
-
     elevateNodesOnSelect: rx.Var[bool] = True  # 在选择节点时提高节点的 z 索引
-
     connectOnClick: rx.Var[bool] = True  # 该选项允许您单击或点击源句柄以启动连接 然后单击目标句柄以完成连接。connectOnClick    如果将此选项设置为 ，用户将需要将连接线拖动到目标 句柄以创建连接。false
-
     connectionMode: rx.Var[Literal['strict', 'loose']] = 'strict'  # 松散连接模式将允许您连接不同类型的手柄，包括 源到源连接。但是，它不支持目标到目标的连接。严格 模式仅允许源句柄和目标句柄之间的连接。 Strict: 只能从源句柄开始并在目标句柄结束时建立连接 # Loose: 可以在任何手柄之间进行连接，无论类型如何
     # endregion
 
     # region 下面是连接线(connection)道具
     connectionLineStyle: rx.Var[Dict[str, Union[str, int]]] = {} # 要应用于连接线的样式。
-
     connectionLineType: rx.Var[Literal['default', 'straight', 'step', 'smoothstep', 'simplebezier']] = 'default'  # 用于连接线的边路径类型。 虽然创建的边可以是任何类型，但在创建边之前，React Flow 需要知道要为连接线渲染什么类型的路径！
-
     connectionRadius: rx.Var[int] = 20  # 手柄周围的半径，在其中放置连接线以创建新边。
-
     # 【以后再做】connectionLineComponent: rx.Var[ConnectionLineComponentProps | None] = None # React 组件用作连接线。
-
     connectionLineContainerStyle: rx.Var[Dict[str, Union[str, int]]] = {}    # 要应用于连接线容器的样式。
-
     # endregion
 
     # region 下面是键盘(KBd)道具
     # reflex里键盘案件的数据类型是str
     deleteKeyCode: rx.Var[str | None] = 'Backspace'  # 按下键或弦将删除任何选定的节点和边。传递数组 表示可以按下的多个键。 例如，将删除按下任一键时的选定元素。["Delete", "Backspace"]
-
     selectionKeyCode: rx.Var[str | None] = 'Shift'  # 按住此键将允许您单击并拖动以在多个周围绘制一个选择框 节点和边。传递数组表示可以按下的多个键。   例如，当任一键为 压。["Shift", "Meta"]
-
     multiSelectionKeyCode: rx.Var[str | None] = "'Meta' for macOS, 'Control' for other systems"  # 按下此键，您可以通过单击选择多个元素。
-
     zoomActivationKeyCode: rx.Var[str | None] = "'Meta' for macOS, 'Control' for other systems"  # 如果设置了关键帧，则即使设置为 ，您也可以在按住该关键帧时缩放视口。panOnScrollfalse    通过将此属性设置为，您可以禁用此功能。null
-
     panActivationKeyCode: rx.Var[str | None] = 'Space'  # 如果设置了关键帧，则即使设置为 ，也可以在按住该关键帧时平移视口。panOnScrollfalse 通过将此属性设置为，您可以禁用此功能。null
-
     disableKeyboardA11y: rx.Var[bool] = False  # 您可以使用此 prop 禁用键盘辅助功能，例如选择节点或 使用箭头键移动选定节点。
     # endregion
 
     # region 下面是风格(Style)道具
     noPanClassName: rx.Var[str] = 'nopan'  # 如果画布中的某个元素没有阻止鼠标事件传播，则单击和拖动 该元素将平移视口。添加类可以防止此行为和此 prop 允许您更改该类的名称
-
     noDragClassName: rx.Var[str] = 'nodrag'  # 如果节点是可拖动的，则单击并拖动该节点将在画布上移动它。添加 该类阻止了这种行为，并且这个 prop 允许你更改它的名称 类
-
     noWheelClassName: rx.Var[str] = 'nowheel'  # 通常，当鼠标悬停在画布上时滚动鼠标滚轮将缩放视口。 将类添加到画布上的元素 n 将阻止此行为和此 prop 允许您更改该类的名称。"nowheel"
     # endregion
 
@@ -478,7 +436,7 @@ class ReactFlow(ReactFlowLib):
 
 
 
-# 下面是组件
+# region 下面是组件
 # OK
 class Background(ReactFlowLib):
     '''背景组件可以方便地渲染基于节点的 UI 中常见的不同类型的背景。它有三种变体：线条、点和十字。'''
@@ -499,54 +457,43 @@ class Background(ReactFlowLib):
 class BaseEdge(ReactFlowLib):   # https://reactflow.dev/api-reference/components/base-edge
     '''该组件在内部用于所有边。它可以是 在自定义边缘内使用，并处理不可见的辅助边和边缘标签 给你的。'''
     tag = 'BaseEdge'
-
     path: rx.Var[str | None] = None    # 定义边缘的 SVG 路径字符串。这应该类似于一条简单的线。实用函数，如 can 用于为您生成此字符串。'M 0 0 L 100 100'getSimpleBezierEdge
-
     markerStart: rx.Var[str | None] = None    # 要在边缘开头使用的 SVG 标记的 id。这应该在单独的 SVG 文档或元素的元素中定义。使用格式“url（#markerId）”，其中 markerId 是标记定义的 ID。<defs>
-
     markerEnd: rx.Var[str | None] = None  # 要在边缘末尾使用的 SVG 标记的 ID。这应该在单独的 SVG 文档或元素的元素中定义。使用格式“url（#markerId）”，其中 markerId 是标记定义的 ID。<defs>
-
     #label   # 要沿边缘渲染的标签或自定义元素。这通常是文本标签或一些 自定义控件。
-
     labelStyle: rx.Var[Dict[str, Union[str, int]]] = {}   # 要应用于标签的自定义样式。
-
     labelShowBg: rx.Var[bool | None] = None   #
-
     labelBgStyle: rx.Var[Dict[str, Union[str, int]]] = {}   #
-
     labelBgPadding: rx.Var[list[int] | None] = None   #
-
     labelBgBorderRadius: rx.Var[int | None] = None   #
-
     interactionWidth: rx.Var[int] = 20   # 用户可以与之交互的边缘周围不可见区域的宽度。这是 对于使边缘更易于单击或将鼠标悬停在上面很有用。
-
     labelX: rx.Var[int | None] = None   # 边缘标签的 x 位置
-
     labelY: rx.Var[int | None] = None   # 边标的y位置
-
     # ..props   # Omit<SVGAttributes<SVGPathElement>, "d" | "path" | "markerStart" | "markerEnd">
 
 class ControlButton(ReactFlowLib):
     tag = 'ControlButton'
+    # ..props   # Omit<SVGAttributes<SVGPathElement>, "d" | "path" | "markerStart" | "markerEnd">
+
 # OK
 class Controls(ReactFlowLib):
 
     tag = "Controls"
 
-    showZoom: rx.Var[bool] = True    # 是否显示放大和缩小按钮。这些按钮将调整视口 每次按下以固定量缩放。
-    showFitView: rx.Var[bool] = True    # 是否显示适合视图按钮。默认情况下，此按钮将调整视口，以便 所有节点都同时可见。
-    showInteractive: rx.Var[bool] = True    # 用于切换交互性的显示按钮
+    #showZoom: rx.Var[bool] = True    # 是否显示放大和缩小按钮。这些按钮将调整视口 每次按下以固定量缩放。
+    #showFitView: rx.Var[bool] = True    # 是否显示适合视图按钮。默认情况下，此按钮将调整视口，以便 所有节点都同时可见。
+    #showInteractive: rx.Var[bool] = True    # 用于切换交互性的显示按钮
     # 【以后再做】fitViewOptions: rx.Var[FitViewOptionsBase[Any]] = rx.Var.create(FitViewOptionsBase())  # https://reactflow.dev/api-reference/components/controls#fitviewoptions # 自定义适合视图按钮的选项。这些选项与您将传递给 fitView 函数。
-    onZoomIn: rx.Var[Callable[[], None]] = None    # 此外，还调用单击放大按钮时的默认缩放行为。
-    onZoomOut: rx.Var[Callable[[], None]] = None   # 此外，还调用单击缩小按钮时的默认缩放行为。
-    onFitView: rx.Var[Callable[[], None]] = None   # 单击“拟合视图”按钮时调用。如果未提供此选项，则视口将为 调整为所有节点都可见。
-    onInteractiveChange: rx.Var[Callable[[bool], None]] = None # 单击交互式（锁定）按钮时调用。
-    position: rx.Var[Literal['top-left', 'top-center', 'top-right', 'bottom-left', 'bottom-center', 'bottom-right']] = 'bottom-left'    # 控件在窗格上的位置
-    children: rx.Var[Union[rx.Component, str, int, float, Iterable[Any], bool, None]] = None    # 对于react-flow.Controls.children    类型的说明:https://github.com/DefinitelyTyped/DefinitelyTyped/blob/d7e13a7c7789d54cf8d601352517189e82baf502/types/react/index.d.ts#L264
-    style: rx.Var[Dict[str, Union[str, int]]] = {}   # 应用于容器的样式
-    className: rx.Var[str | None] = None  # 应用于容器的类名
-    aria_label: rx.Var[str] = 'React Flow controls'
-    orientation: rx.Var[Literal['horizontal', 'vertical']] = 'vertical'
+    #onZoomIn: rx.Var[Callable[[], None]] = None    # 此外，还调用单击放大按钮时的默认缩放行为。
+    #onZoomOut: rx.Var[Callable[[], None]] = None   # 此外，还调用单击缩小按钮时的默认缩放行为。
+    #onFitView: rx.Var[Callable[[], None]] = None   # 单击“拟合视图”按钮时调用。如果未提供此选项，则视口将为 调整为所有节点都可见。
+    #onInteractiveChange: rx.Var[Callable[[bool], None]] = None # 单击交互式（锁定）按钮时调用。
+    #position: rx.Var[Literal['top-left', 'top-center', 'top-right', 'bottom-left', 'bottom-center', 'bottom-right']] = 'bottom-left'    # 控件在窗格上的位置
+    #children: rx.Var[Union[rx.Component, str, int, float, Iterable[Any], bool, None]] = None    # 对于react-flow.Controls.children    类型的说明:https://github.com/DefinitelyTyped/DefinitelyTyped/blob/d7e13a7c7789d54cf8d601352517189e82baf502/types/react/index.d.ts#L264
+    #style: rx.Var[Dict[str, Union[str, int]]] = {}   # 应用于容器的样式
+    #className: rx.Var[str | None] = None  # 应用于容器的类名
+    #aria_label: rx.Var[str] = 'React Flow controls'
+    #orientation: rx.Var[Literal['horizontal', 'vertical']] = 'vertical'
 
 class EdgeLabelRenderer(ReactFlowLib):
     '''边缘基于 SVG。如果您想渲染更复杂的标签，您可以使用该组件访问基于 div 的渲染器。
@@ -639,44 +586,93 @@ class MiniMap(ReactFlowLib):
 class NodeResizeControl(ReactFlowLib):
     '''要创建自己的调整大小 UI，您可以使用可以传递子组件（例如图标）NodeResizeControl的组件。'''
     tag = 'NodeResizeControl'
+    nodeID: rx.Var[str | None] = None
+    color: rx.Var[str | None] = None
+    minWidth: rx.Var[int] = 10
+    minHeight: rx.Var[int] = 10
+    # maxWidth: rx.Var[int] =
+    # maxHeigh: rx.Var[int] =
+    keepAspectRatio: rx.Var[bool] = True
+    # shouldResize
+    autoScale: rx.Var[bool] = True
+    #onResizeStart
+    #onResize
+    #onResizeEnd
+    #position
+    variant: rx.Var[Literal['handle']] = 'handle'
+    #resizeDirection
+    className: rx.Var[str | None] = None
+    style: rx.Var[Dict[str, Union[str, int]]] = {}
+    #children
 
 class NodeResizer(ReactFlowLib):
     '''该组件可用于将调整大小功能添加到 <NodeResizer />节点。它渲染节点周围的可拖动控件，以在各个方向上调整大小。'''
     tag='NodeResizer'
+    nodeId: rx.Var[str | None] = None
+    color: rx.Var[str | None] = None
+    handleClassName: rx.Var[str | None] = None
+    handleStyle: rx.Var[Dict[str, Union[str, int]]] = {}
+    lineClassName: rx.Var[str | None] = None
+    lineStyle: rx.Var[Dict[str, Union[str, int]]] = {}
+    isVisible: rx.Var[bool] = True
+    minWidth: rx.Var[int] = 10
+    minHeight: rx.Var[int] = 10
+    #maxWidth: rx.Var[int] =
+    #maxHeight: rx.Var[int] =
+    keepAspectRatio: rx.Var[bool] = False
+    autoScale: rx.Var[bool] = True
+    #shouldResize:
+    #onResizeStart:
+    #onResize:
+    #onResizeEnd:
 
 class NodeToolbar(ReactFlowLib):
     '''此组件可以将工具栏或工具提示渲染到自定义节点的一侧。这 工具栏不会随视口缩放，因此内容始终可见。'''
+
+    class Position(TypedDict):
+        Left: Literal['left'] | None = None
+        Top: Literal['top'] | None = None
+        Right: Literal['right'] | None = None
+        Bottom: Literal['bottom'] | None = None
+
     tag='NodeToolbar'
+    nodeId: rx.Var[str | List[str] | None] = None
+    isVisible: rx.Var[bool | None] = None
+    position: Position = 'top'
+    offset: rx.Var[int] = 10
+    #align: Align = 'center'
+    # ..props   # Omit<SVGAttributes<SVGPathElement>, "d" | "path" | "markerStart" | "markerEnd">
 
 class Panel(ReactFlowLib):
     '''该组件可帮助您将内容放置在视口上方。是的 <Panel />由 <MiniMap /> 和 <Controls /> 组件内部使用。'''
     tag='Panel'
+    position: Literal['top-left', 'top-center', 'top-right', 'bottom-left', 'bottom-center', 'bottom-right'] = 'top-left'
+    # ..props   # Omit<SVGAttributes<SVGPathElement>, "d" | "path" | "markerStart" | "markerEnd">
+
 
 class ViewportPortal(ReactFlowLib):
     '''<ViewportPortal />组件可用于将组件添加到渲染节点和边的流的同一视口。当您想要渲染自己的组件时，这非常有用，这些组件与节点和边遵循相同的坐标系，并且还受缩放和平移的影响'''
     tag='ViewportPortal'
 
     # children=
-
+# endregion
 
 # region 下面是实例化组件
 react_flow = ReactFlow.create
 background = Background.create
-# control_button = ControlButton.create
-# base_edge = BaseEdge.creat
+#base_edge = BaseEdge.create
+#control_button = ControlButton.create
 controls = Controls.create
-# edge_label_renderer = EdgeLabelRenderer.create
-# edge_text = EdgeText.create
-# handle = Handle.create
-# mini_map = MiniMap.create
-# node_resize_control = NodeResizeControl.create
-# node_resizer = NodeResizer.create
-# node_toolbar = NodeToolbar.create
-# panel = Panel.create
-# viewport_portal = ViewportPortal.create
+#edge_label_renderer = EdgeLabelRenderer.create
+#edge_text = EdgeText.create
+#handle = Handle.create
+#mini_map = MiniMap.create
+#node_resize_control = NodeResizeControl.create
+#node_resizer = NodeResizer.create
+#node_toolbar = NodeToolbar.create
+#panel = Panel.create
+#viewport_portal = ViewportPortal.create
 # endregion
-
-
 
 
 

@@ -1,0 +1,83 @@
+# 【以后再做】Hooks部分
+
+import reflex as rx
+from reflex_react_flow import ReactFlowLib
+from reflex.vars.base import Var, VarData
+from reflex.constants import Hooks
+from reflex.components.el.elements import Div
+
+
+# 示例hooks
+class ComponentWithHooks(Div, ReactFlowLib):
+    """MyComponent."""
+
+    def add_hooks(self) -> list[str | Var]:
+        """Add hooks to the component."""
+        hooks = []
+        hooks1 = """const customHookVariable = "some value";"""
+        hooks.append(hooks1)
+
+        # 一个需要在记忆事件处理程序之前编写的钩子。
+        hooks2 = Var(
+            """useEffect(() => {
+                console.log("PreTrigger: " + customHookVariable);
+            }, []);
+            """,
+            _var_data=VarData(
+                imports={"react": ["useEffect"]},
+                position=Hooks.HookPosition.PRE_TRIGGER
+            ),
+        )
+        hooks.append(hooks2)
+
+        hooks3 = Var(
+            """useEffect(() => {
+                console.log("PostTrigger: " + customHookVariable);
+            }, []);
+            """,
+            _var_data=VarData(
+                imports={"react": ["useEffect"]},
+                position=Hooks.HookPosition.POST_TRIGGER
+            ),
+        )
+        hooks.append(hooks3)
+        return hooks
+
+
+# 使用连接(use-connection)
+def hook_use_connection(ReactFlowLib):
+    # 1. 声明hook变量（命名体现业务语义）
+    connection = Hooks.useConnection()
+
+    # 2. 创建响应式UI
+    return rx.box(
+        rx.cond(
+            connection,
+            rx.text(f"Someone is trying to make a connection from {connection.fromNode} to this one."),
+            rx.text("There are currently no incoming connections!")
+        )
+    )
+
+
+
+# 使用内部节点(use-internal-node)
+def hook_use_internal_node(node_id: str ):
+    hook1 = "const internalNode = useInternalNode(('node-1');"
+    hook2 = "const [isActive, setIsActive] = React.useState(false);"
+    hooks3 =  Var(f"""
+        React.useEffect(() => {
+        # setIsActive(internalNode?.selected | | false);
+        }, [internalNode?.selected]);
+        """,
+            _var_data={
+                "imports": {
+                    "@xyflow/react": ["useInternalNode"],
+                    "react": ["useEffect", "useState"]
+                },
+                "position": Hooks.HookPosition.POSTTRIGGER  # 执行时机控制
+            }
+        )
+
+
+
+

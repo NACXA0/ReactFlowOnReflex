@@ -1,18 +1,23 @@
-# react-flow
+# flow
 
-A Reflex custom component react-flow.
+A Reflex custom component flow.
 
 ## Installation
 
 ```bash
-pip install reflex-react-flow
+pip install reflex-flow
 ```
 
+Yes, I referred to the example of wrapping React Flow in the Reflex documentation, and I hope it is not just an example, but a comprehensive React Flow feature within Reflex
+是的，我参考了reflex文档中包装react-flow的示例，我希望它不仅只是一个示例，而是成为一个reflex里一个完善的react-flow功能.
+
+- 使用方法:
+  - 
 
 - 程序守则:
   - 定义数据类型时。必须使用rx.Var[]的形式: Reflex要求所有状态变量都必须是rx.Var类型。 如：rx.Var[int]、而不是int     https://reflex.dev/docs/state/overview/
   - 定义数据类型时。单个 rx.Var 容器内包含所有可能类型。    如: rx.Var[Union[int, Tuple[int, int]]] 而不是 rx.Var[int] | rx.Var[List[int]]    https://reflex.dev/docs/state/vars/
-  - 定义数据类型时。style 的 CSSProperties 的 数据类型声明:  rx.Var[Dict[str, Union[str, int]]]
+  - 定义数据类型时。style 的 CSSProperties 的 数据类型声明:  【弃用】rx.Var[Dict[str, Union[str, int]]]
       - （出处）：
         - Reflex 官方文档：Styling(https://reflex.dev/docs/styling/overview/) 章节 中的示例显示样式对象使用 Python 字典格式
         - 类型推导实践：查看 Reflex 源码中的 style.py(https://github.com/reflex-dev/reflex/blob/main/reflex/style.py) 可确认其内部将样式处理为字符串字典
@@ -35,7 +40,8 @@ pip install reflex-react-flow
         #          这里要包装rx.Var[]        默认值
         position: rx.Var[XYPosition] = {"x": 0, "y": 0} 
     ```
-  -
+  - 定义数据类型时。react-flow的数据类型 ..props  参考： https://reflex.dev/docs/wrapping-react/props/
+  - 
 
 
 
