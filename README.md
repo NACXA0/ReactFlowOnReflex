@@ -15,9 +15,10 @@ Yes, I referred to the example of wrapping React Flow in the Reflex documentatio
   - 
 
 - 程序守则:
+  - 无限大: float('inf')  无限小: -float('inf')
   - 定义数据类型时。必须使用rx.Var[]的形式: Reflex要求所有状态变量都必须是rx.Var类型。 如：rx.Var[int]、而不是int     https://reflex.dev/docs/state/overview/
   - 定义数据类型时。单个 rx.Var 容器内包含所有可能类型。    如: rx.Var[Union[int, Tuple[int, int]]] 而不是 rx.Var[int] | rx.Var[List[int]]    https://reflex.dev/docs/state/vars/
-  - 定义数据类型时。style 的 CSSProperties 的 数据类型声明:  【弃用】rx.Var[Dict[str, Union[str, int]]]
+  - 定义数据类型时。style 的 CSSProperties 的 数据类型声明:  rx.Var[Dict[str, Union[str, int]]]
       - （出处）：
         - Reflex 官方文档：Styling(https://reflex.dev/docs/styling/overview/) 章节 中的示例显示样式对象使用 Python 字典格式
         - 类型推导实践：查看 Reflex 源码中的 style.py(https://github.com/reflex-dev/reflex/blob/main/reflex/style.py) 可确认其内部将样式处理为字符串字典
@@ -41,8 +42,12 @@ Yes, I referred to the example of wrapping React Flow in the Reflex documentatio
         position: rx.Var[XYPosition] = {"x": 0, "y": 0} 
     ```
   - 定义数据类型时。react-flow的数据类型 ..props  参考： https://reflex.dev/docs/wrapping-react/props/
+  - 定义数据类型时。react-flow的数据类型 NodeType 的可选参数为 "default" | "input" | "output" | "group"    https://reactflow.dev/api-reference/types/node#default-node-types
+  - 定义数据类型时。react-flow的数据类型 HandleType 的可选参数为  'source' | 'target'     不写是 'source'   重要！handle竟然没有对应的官网页面？NodeType和EdgeType都有了，但是HandelType确实404？？这应该是react-flow内部的问题，需要问一问官方的情况
+  - 定义数据类型时。react-flow的数据类型 EdgeType 的可选参数为 "default" | "straight" | "step" | "smoothstep" | "simplebezier" https://reactflow.dev/api-reference/types/edge#default-edge-types
+  - 定义数据类型时。react-flow的数据类型 OnConnect 的数据类型定义为: rx.EventHandler[lambda e0: [e0]]  可选参数是一个事件处理器
+  - 定义数据类型时。react-flow的数据类型 PanelPosition 的数据类型定义为: rx.Var[Literal['top-left', 'top-center', 'top-right', 'bottom-left', 'bottom-center', 'bottom-right']]  通常默认值是: 'bottom-right'  https://reactflow.dev/api-reference/types/panel-position
   - 
-
 
 
 
@@ -133,7 +138,9 @@ Yes, I referred to the example of wrapping React Flow in the Reflex documentatio
     
     
 
-
+- 未解决的问题:
+  - 所有没有默认值的参数，应不应该默认为None？ 还是就是空着？
+  - 
 
 
 

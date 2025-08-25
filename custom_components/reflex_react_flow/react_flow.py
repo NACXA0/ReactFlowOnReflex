@@ -457,7 +457,7 @@ class Background(ReactFlowLib):
 class BaseEdge(ReactFlowLib):   # https://reactflow.dev/api-reference/components/base-edge
     '''该组件在内部用于所有边。它可以是 在自定义边缘内使用，并处理不可见的辅助边和边缘标签 给你的。'''
     tag = 'BaseEdge'
-    path: rx.Var[str | None] = None    # 定义边缘的 SVG 路径字符串。这应该类似于一条简单的线。实用函数，如 can 用于为您生成此字符串。'M 0 0 L 100 100'getSimpleBezierEdge
+    path: rx.Var[str | None] = None    # 定义边缘的 SVG 路径字符串。这应该类似于一条简单的线。实用函数，如 can 用于为您生成此字符串。'M 0 0 L 100 100' getSimpleBezierEdge
     markerStart: rx.Var[str | None] = None    # 要在边缘开头使用的 SVG 标记的 id。这应该在单独的 SVG 文档或元素的元素中定义。使用格式“url（#markerId）”，其中 markerId 是标记定义的 ID。<defs>
     markerEnd: rx.Var[str | None] = None  # 要在边缘末尾使用的 SVG 标记的 ID。这应该在单独的 SVG 文档或元素的元素中定义。使用格式“url（#markerId）”，其中 markerId 是标记定义的 ID。<defs>
     #label   # 要沿边缘渲染的标签或自定义元素。这通常是文本标签或一些 自定义控件。
@@ -501,7 +501,7 @@ class EdgeLabelRenderer(ReactFlowLib):
     您可以在边缘标签渲染器(https://reactflow.dev/examples/edges/edge-label-renderer)示例中查看组件的示例用法'''
     tag = 'EdgeLabelRenderer'
 
-    # children
+   # children: rx.Var[ReactFlow.Nodes | List[Dict[str, Any]]] | None = None
 
 class EdgeText(ReactFlowLib):
     '''您可以将该组件用作辅助组件来显示文本 <EdgeText />在自定义边缘中。'''
@@ -511,136 +511,111 @@ class EdgeText(ReactFlowLib):
 
     y: rx.Var[int]  # 应呈现标签的 y 位置。
 
-    #label  # 要沿边缘渲染的标签或自定义元素。这通常是文本标签或一些 自定义控件。
+    #label: rx.Var[str]  # 要沿边缘渲染的标签或自定义元素。这通常是文本标签或一些 自定义控件。
 
-    #labelStyle # 要应用于标签的自定义样式。
+    labelStyle: rx.Var[Dict[str, Union[str, int]]] = {} # 要应用于标签的自定义样式。
 
     labelShowBg: rx.Var[bool]
 
-    #labelBgStyle
+    labelBgStyle: rx.Var[Dict[str, Union[str, int]]] = {}
 
-    labelBgPadding: rx.Var[list[int]]
+    labelBgPadding: rx.Var[list[int]]   # [number, number]
 
     labelBgBorderRadius: rx.Var[int]
 
 class Handle(ReactFlowLib):
     '''该组件在自定义节点(https://reactflow.dev/learn/customization/custom-nodes)中用于定义连接点。<Handle />'''
-    tag = 'Handel'
+    tag = 'Handle'
 
-    id: rx.Var[int] = None
+    id: rx.Var[str | None] = None
 
     type: Literal['source', 'target'] = 'source'    # 手柄的类型。
-
-    #position    # 手柄相对于节点的位置。在水平流中，源手柄是 Position.Right通常，在垂直流动中，它们通常是 。Position.Top
-
+    position: rx.Var[Literal['left', 'top', 'right', 'bottom']]    # 手柄相对于节点的位置。在水平流中，源手柄是 Position.Right通常，在垂直流动中，它们通常是 。Position.Top
     isConnectable: rx.Var[bool] = True   # 您是否能够连接到/从此句柄连接。
-
     isConnectableStart: rx.Var[bool] = True   # 指示连接是否可以从此句柄开始。
-
     isConnectableEnd: rx.Var[bool] = True   # 指示连接是否可以在此句柄上结束。
-
-    #isValidConnection       # 将连接拖动到此句柄时调用。您可以使用此回调来执行一些 例如，基于连接目标和源的自定义验证逻辑。在可能的情况下， 我们建议您将此逻辑移动到主 ReactFlow 上的 prop 组件出于性能原因。isValidConnection
-
-    #onConnect   # 建立连接时调用回调
+    #isValidConnection       # 【不建议使用】【未知】将连接拖动到此句柄时调用。您可以使用此回调来执行一些 例如，基于连接目标和源的自定义验证逻辑。在可能的情况下， 我们建议您将此逻辑移动到主 ReactFlow 上的 prop 组件出于性能原因。isValidConnection
+    onConnect: rx.EventHandler[lambda e0: [e0]]    # 建立连接时调用回调事件处理器
+    # props https://reactflow.dev/api-reference/components/handle#props
 
 class MiniMap(ReactFlowLib):
 
     tag = 'MiniMap'
 
-    #position    # 小地图在窗格上的位置。
-
-    #onClick     # 点击小地图时调用回调。
-
-    #nodeColor   # 小地图上节点的颜色。
-
-
-
-    id: rx.Var[str]
-
-    x: rx.Var[int]
-
-    y: rx.Var[int]
-
-    width: rx.Var[int]
-
-    height: rx.Var[int]
-
-    borderRadius: rx.Var[int]
-
-    className: rx.Var[str]
-
-    color: rx.Var[str]
-
-    shapeRendering: rx.Var[str]
-
-    strokeColor: rx.Var[str]
-
-    strokeWidth: rx.Var[int]
-
-    #style: rx.Var[str]
-
-    selected: rx.Var[bool]
-
-    #onClick
+    position: rx.Var[Literal['top-left', 'top-center', 'top-right', 'bottom-left', 'bottom-center', 'bottom-right']] =  'bottom-right'   # 小地图在窗格上的位置。
+    onClick: rx.EventHandler[lambda e0: [e0]]
+    nodeColor: rx.Var[str] = "#e2e2e2"   # 小地图上节点的颜色。
+    nodeStrokeColorL: rx.Var[str] = "transparent"   # 小地图上节点的笔划颜色。
+    nodeClassName: rx.Var[str] = '' # 应用于小地图节点的类名。      默认值是空字符串
+    nodeBorderRadius: rx.Var[int] = 5   # 小地图上节点的边界半径。
+    nodeStrokeWidth: rx.Var[int] = 2    # 小地图上节点的笔划宽度。
+    # nodeComponent: rx.Var[str]    这个还有很大问题https://reactflow.dev/api-reference/components/minimap#nodecomponent
+    bgColor: rx.Var[str]    # 小地图的背景颜色
+    maskColor: rx.Var[str] = "rgba(240, 240, 240, 0.6)"  # 覆盖小地图中当前不可见的部分的遮罩的颜色 视窗。
+    maskStrokeColor: rx.Var[str] = 'transparent'    # 表示视口的蒙版的描边颜色
+    maskStrokeWidth: rx.Var[int] = 1    # 表示视口的蒙版的描边宽度。
+    onNodeClick: rx.EventHandler[lambda e0: [e0]]    # 点击小地图上的节点时调用回调。
+    pannable: rx.Var[bool] = False  # 确定是否可以通过在小地图内拖动来平移视口
+    zoomable: rx.Var[bool] = False  # 确定是否可以通过在小地图内滚动来缩放视口。
+    ariaLabel: rx.Var[str | None] = "Mini Map"  # 小地图中没有文本供屏幕阅读器用作可访问的名称，因此它是 重要提示 我们提供了一个使小地图易于访问。默认值就足够了，但你可以 想要将其替换为与您的应用或产品更相关的内容。
+    inversePan: rx.Var[bool]    # 平移小地图视口时反转方向。
+    zoomStep: rx.Var[int] = 10  # 在小地图上放大/缩小的步长。
+    offsetScale: rx.Var[int] = 5  # 在小地图上偏移视口，就像填充一样。         只是number可以是int或者float
+    # props https://reactflow.dev/api-reference/components/minimap#props
 
 class NodeResizeControl(ReactFlowLib):
     '''要创建自己的调整大小 UI，您可以使用可以传递子组件（例如图标）NodeResizeControl的组件。'''
     tag = 'NodeResizeControl'
-    nodeID: rx.Var[str | None] = None
-    color: rx.Var[str | None] = None
-    minWidth: rx.Var[int] = 10
-    minHeight: rx.Var[int] = 10
-    # maxWidth: rx.Var[int] =
-    # maxHeigh: rx.Var[int] =
-    keepAspectRatio: rx.Var[bool] = True
-    # shouldResize
-    autoScale: rx.Var[bool] = True
-    #onResizeStart
-    #onResize
-    #onResizeEnd
-    #position
-    variant: rx.Var[Literal['handle']] = 'handle'
-    #resizeDirection
+
+    nodeID: rx.Var[str | None] = None   # 它正在调整大小的节点的 ID。
+    color: rx.Var[str | None] = None    # 调整大小手柄的颜色。
+    minWidth: rx.Var[int] = 10  # 节点的最小宽度。
+    minHeight: rx.Var[int] = 10 # 节点的最小高度。
+    maxWidth: rx.Var[int]   # 节点的最大宽度。    【未知】默认值: Number.MAX_VALUE https://reactflow.dev/api-reference/components/node-resize-control#maxwidth
+    maxHeigh: rx.Var[int]   # 节点的最大高度。    【未知】默认值: Number.MAX_VALUE https://reactflow.dev/api-reference/components/node-resize-control#maxwidth
+    keepAspectRatio: rx.Var[bool] = False   # 调整大小时保持纵横比
+    shouldResize: rx.EventHandler[lambda e0: [e0]]  # 回调，用于确定是否应调整节点大小。
+    autoScale: rx.Var[bool] = True  # 使用缩放级别缩放控件。
+    #onResizeStart:   # 调整大小开始时调用回调。  数据类型: OnResizeStart
+    #onResize:    # 调整大小时调用的回调。  数据类型: OnResize
+    #onResizeEnd: # 调整大小结束时调用回调。  数据类型: OnResizeEnd
+    #position:    # 控件的位置。  数据类型: ControlPosition
+    variant: rx.Var[Literal['handle']] = 'handle'   # 控件的变体。  数据类型: ResizeControlVariant
+    #resizeDirection:    # 用户可以调整节点大小的方向。 如果未提供，用户可以向任何方向调整大小。   数据类型:  ResizeControlDirection
     className: rx.Var[str | None] = None
     style: rx.Var[Dict[str, Union[str, int]]] = {}
-    #children
+    #children:    # 数据类型: ReactNode
 
 class NodeResizer(ReactFlowLib):
     '''该组件可用于将调整大小功能添加到 <NodeResizer />节点。它渲染节点周围的可拖动控件，以在各个方向上调整大小。'''
     tag='NodeResizer'
-    nodeId: rx.Var[str | None] = None
-    color: rx.Var[str | None] = None
-    handleClassName: rx.Var[str | None] = None
-    handleStyle: rx.Var[Dict[str, Union[str, int]]] = {}
-    lineClassName: rx.Var[str | None] = None
-    lineStyle: rx.Var[Dict[str, Union[str, int]]] = {}
-    isVisible: rx.Var[bool] = True
-    minWidth: rx.Var[int] = 10
-    minHeight: rx.Var[int] = 10
-    #maxWidth: rx.Var[int] =
-    #maxHeight: rx.Var[int] =
-    keepAspectRatio: rx.Var[bool] = False
-    autoScale: rx.Var[bool] = True
-    #shouldResize:
-    #onResizeStart:
-    #onResize:
-    #onResizeEnd:
+    nodeId: rx.Var[str | None] = None   # 它正在调整大小的节点的 ID。
+    color: rx.Var[str | None] = None    # 调整大小手柄的颜色。
+    handleClassName: rx.Var[str | None] = None  # 应用于句柄的类名。
+    handleStyle: rx.Var[Dict[str, Union[str, int]]] = {}    # 应用于手柄的样式。
+    lineClassName: rx.Var[str | None] = None    # 应用于线的类名。
+    lineStyle: rx.Var[Dict[str, Union[str, int]]] = {}  # 应用于线的样式。
+    isVisible: rx.Var[bool] = True  # 控件是否可见。
+    minWidth: rx.Var[int] = 10  # 节点的最小宽度。
+    minHeight: rx.Var[int] = 10 # 节点的最小高度。
+    maxWidth: rx.Var[int]    # 节点的最大宽度。  【未知】默认值: Number.MAX_VALUE
+    maxHeight: rx.Var[int]   # 节点的最大高度。  【未知】默认值: Number.MAX_VALUE
+    keepAspectRatio: rx.Var[bool] = False   # 调整大小时保持纵横比。
+    autoScale: rx.Var[bool] = True  # 使用缩放级别缩放控件。
+    shouldResize: rx.EventHandler[lambda e0: [e0]]   # 回调，用于确定是否应调整节点大小。
+    onResizeStart: rx.EventHandler[lambda e0: [e0]] # 调整大小开始时调用回调。
+    onResize: rx.EventHandler[lambda e0: [e0]] # 调整大小时调用的回调。
+    onResizeEnd: rx.EventHandler[lambda e0: [e0]]  # 调整大小结束时调用回调。
 
 class NodeToolbar(ReactFlowLib):
     '''此组件可以将工具栏或工具提示渲染到自定义节点的一侧。这 工具栏不会随视口缩放，因此内容始终可见。'''
 
-    class Position(TypedDict):
-        Left: Literal['left'] | None = None
-        Top: Literal['top'] | None = None
-        Right: Literal['right'] | None = None
-        Bottom: Literal['bottom'] | None = None
-
     tag='NodeToolbar'
-    nodeId: rx.Var[str | List[str] | None] = None
-    isVisible: rx.Var[bool | None] = None
-    position: Position = 'top'
-    offset: rx.Var[int] = 10
-    #align: Align = 'center'
+    nodeId: rx.Var[str | List[str] | None] = None   # 通过传入节点 ID 数组，您可以为组或集合渲染单个工具提示 节点数。
+    isVisible: rx.Var[bool | None] = None   # 如果 True，即使未选择节点，节点工具栏也可见。
+    position: rx.Var[Literal['left', 'top', 'right', 'bottom']] = 'top'  # 工具栏相对于节点的位置。
+    offset: rx.Var[int] = 10    # 节点和工具栏之间的空间，以像素为单位。
+    align: rx.Var[str] = 'center'    # 相对于节点对齐工具栏      数据类型: Align
     # ..props   # Omit<SVGAttributes<SVGPathElement>, "d" | "path" | "markerStart" | "markerEnd">
 
 class Panel(ReactFlowLib):
@@ -648,7 +623,6 @@ class Panel(ReactFlowLib):
     tag='Panel'
     position: Literal['top-left', 'top-center', 'top-right', 'bottom-left', 'bottom-center', 'bottom-right'] = 'top-left'
     # ..props   # Omit<SVGAttributes<SVGPathElement>, "d" | "path" | "markerStart" | "markerEnd">
-
 
 class ViewportPortal(ReactFlowLib):
     '''<ViewportPortal />组件可用于将组件添加到渲染节点和边的流的同一视口。当您想要渲染自己的组件时，这非常有用，这些组件与节点和边遵循相同的坐标系，并且还受缩放和平移的影响'''
@@ -660,18 +634,18 @@ class ViewportPortal(ReactFlowLib):
 # region 下面是实例化组件
 react_flow = ReactFlow.create
 background = Background.create
-#base_edge = BaseEdge.create
-#control_button = ControlButton.create
+base_edge = BaseEdge.create
+control_button = ControlButton.create
 controls = Controls.create
-#edge_label_renderer = EdgeLabelRenderer.create
-#edge_text = EdgeText.create
-#handle = Handle.create
-#mini_map = MiniMap.create
-#node_resize_control = NodeResizeControl.create
-#node_resizer = NodeResizer.create
-#node_toolbar = NodeToolbar.create
-#panel = Panel.create
-#viewport_portal = ViewportPortal.create
+edge_label_renderer = EdgeLabelRenderer.create
+edge_text = EdgeText.create
+handle = Handle.create
+mini_map = MiniMap.create
+node_resize_control = NodeResizeControl.create
+node_resizer = NodeResizer.create
+node_toolbar = NodeToolbar.create
+panel = Panel.create
+viewport_portal = ViewportPortal.create
 # endregion
 
 
