@@ -2,12 +2,11 @@
 
 from rxconfig import config # 这里是正确的，虽然有红线  from rxconfig import config
 import reflex as rx
-from reflex_react_flow import react_flow, background, base_edge, control_button, controls, edge_label_renderer, edge_text, handle, mini_map, node_resize_control, node_resizer, node_toolbar, panel, viewport_portal
+from reflex_flow import flow, background, base_edge, control_button, controls, edge_label_renderer, edge_text, handle, mini_map, node_resize_control, node_resizer, node_toolbar, panel, viewport_portal
 import random
 from collections import defaultdict
 from typing import Any, Dict, List
 filename = f"{config.app_name}/{config.app_name}.py"
-
 # 下面是默认值
 initial_nodes = [
     {
@@ -224,13 +223,20 @@ class State(rx.State):
     def reset_var(self):
         self.reset()
 
-    # 占位符事件处理器——为事件处理器提供一个虚假的接入点
+    # 占位符事件处理器-可接受(0~5)个参数——为事件处理器提供一个虚假的接入点
     @rx.event
-    def fake_event_handel(self, *args):
+    def fake_event_handel(self , a=None, b=None, c=None, d=None, e=None):
         print('触发了占位符事件处理器.******************************')
-        print("位置参数:") if args else None
-        for arg in args:
-            print(f'触发事件数据类型:{type(arg)}, 触发事件数据:{arg}')
+        if a:
+            print(f"包含参数:类型={type(a)}, 值={a}")
+        if b:
+            print(f"包含两个参数:类型={type(b)}, 值={b}")
+        if c:
+            print(f"包含三个参数:类型={type(c)}, 值={c}")
+        if d:
+            print(f"包含四个参数:类型={type(d)}, 值={d}")
+        if e:
+            print(f"包含参五个数:类型={type(e)}, 值={e}")
 
 
 
@@ -269,27 +275,28 @@ def component_base_edge() -> rx.Component:
     )
 # 控制按钮——完全版
 def component_control_button() -> rx.Component:
+    '只能用在controls()里作为子组件'
     return control_button()
 # 控制——完全版
 def component_controls() -> rx.Component:
     return controls(
+        control_button(),   # 【以后再说】这里应该是要放什么组件的，用来修改控制区域的按钮样式
         panel(position='top-left'),
 
-        #showZoom=True,
-        #showFitView=True,
-        #showInteractive=True,
+        showZoom=True,
+        showFitView=True,
+        showInteractive=True,
         # fitViewOptions=None   【以后再说】
-        #onZoomIn=None,
-        #onZoomOut=None,
-        #onFitView=None,
-        #onInteractiveChange=None,
-        #position='bottom-left',
-        #children=None,
-        #style={},  # 应用于容器的样式
-        #className=None,  # 应用于容器的类名
-        #aria_label='React Flow controls',
-        #orientation='vertical'
-
+        onZoomIn=State.fake_event_handel,   # 放大时调用
+        onZoomOut=State.fake_event_handel,  # 缩小时调用
+        onFitView=State.fake_event_handel,  # 修复视角时调用
+        onInteractiveChange=State.fake_event_handel,    # 锁定按钮调用
+        position='bottom-left',
+        children=None,
+        style={},  # 应用于容器的样式
+        className=None,  # 应用于容器的类名
+        aria_label='React Flow controls',
+        orientation='vertical'
     )
 # 连接线标签特别样式——完全版
 def component_edge_label_renderer() -> rx.Component:
@@ -407,8 +414,9 @@ def component_viewport_portal() -> rx.Component:
 
 
 # react_flow主要部分——完全版
-def component_react_flow() -> rx.Component:
-    return react_flow(
+def component_flow() -> rx.Component:
+    return flow(
+
         # region 常见道具
         width = None,
         height = None,
@@ -455,27 +463,65 @@ def component_react_flow() -> rx.Component:
         # endregion
 
         # region 事件处理程序——一般(general)事件
-        onError=State.fake_event_handel('onError'),
-        onInit=State.fake_event_handel('onInit'),
-        onDelete=State.fake_event_handel('onDelete'),
-        onBeforeDelete=State.fake_event_handel('onBeforeDelete'),
+        on_error=State.fake_event_handel,   # 【未测试成功, 不确定返回值】
+        on_init=State.fake_event_handel,    # 【未测试成功, 不确定返回值】
+        on_delete=State.fake_event_handel,  # 【未测试成功, 不确定返回值】
+        on_before_delete=State.fake_event_handel,   # 【未测试成功, 不确定返回值】
         # endregion
 
         # region 事件处理程序——节点(Node)事件
-        # endregion
-
-        # region 事件处理程序——节点(Node)事件
-        on_nodes_change=lambda e0: State.on_nodes_change(e0),
+        on_node_click=State.fake_event_handel,
+        on_node_double_click=State.fake_event_handel,
+        on_node_drag_start=lambda e0, e1, e2: State.fake_event_handel(e0, e1, e2),
+        on_node_drag=lambda e0, e1, e2: State.fake_event_handel(e0, e1, e2),
+        on_node_drag_stop=lambda e0, e1, e2: State.fake_event_handel(e0, e1, e2),
+        on_node_mouse_enter=State.fake_event_handel,
+        on_node_mouse_move=State.fake_event_handel,
+        on_node_mouse_leave=State.fake_event_handel,
+        on_node_context_menu=State.fake_event_handel,
+        on_nodes_delete=State.fake_event_handel,    # 【未测试成功, 不确定返回值】
+        on_nodes_change=lambda e0, e1: State.on_nodes_change(e0, e1),
         # endregion
 
         # region 事件处理程序——边缘(Edge)事件
+        on_edge_click=State.fake_event_handel,
+        on_edge_double_click=State.fake_event_handel,
+        on_edge_mouse_enter=State.fake_event_handel,
+        on_edge_mouse_move=State.fake_event_handel,
+        on_edge_mouse_leave=State.fake_event_handel,
+        on_edge_context_menu=State.fake_event_handel,
+        on_reconnect=State.fake_event_handel,    # 【未测试成功, 不确定返回值】
+        on_reconnect_start=State.fake_event_handel,    # 【未测试成功, 不确定返回值】
+        on_reconnect_end=State.fake_event_handel,    # 【未测试成功, 不确定返回值】
+        on_edges_delete=State.fake_event_handel,    # 【未测试成功, 不确定返回值】
+        on_edges_change=State.fake_event_handel,    # 【未测试成功, 不确定返回值】
         # endregion
 
         # region 事件处理程序——连接(Connect)事件
         on_connect=lambda e0: State.on_connect(e0),
+        on_connect_start=lambda e0, e1: State.fake_event_handel(e0, e1),
+        on_connect_end=lambda e0, e1: State.fake_event_handel(e0, e1),
+        on_click_connect_start=State.fake_event_handel,    # 【未测试成功, 不确定返回值】
+        on_click_connect_end=State.fake_event_handel,      # 【未测试成功, 不确定返回值】
+        is_valid_connection=lambda e0: State.fake_event_handel(e0),
         # endregion
 
-        # region 事件处理程序——窗格(Pane)事件
+        # region 事件处理程序——窗格(Pane)事件 OK
+        on_move=lambda e0, e1: State.fake_event_handel(e0, e1),
+        on_move_strat=lambda e0, e1: State.fake_event_handel(e0, e1),
+        on_move_end=lambda e0, e1: State.fake_event_handel(e0, e1),
+        on_pane_click=State.fake_event_handel,
+        on_pane_context_menu=State.fake_event_handel,
+        on_pane_scroll=State.fake_event_handel,
+        on_pane_mouse_move=State.fake_event_handel,
+        on_pane_mouse_enter=State.fake_event_handel,
+        on_pane_mouse_leave=State.fake_event_handel,
+
+        # 【不知道怎么触发】on_pane_context_menu=lambda *args, **kwargs: State.fake_event_handel(*args, **kwargs),
+        # 【不知道怎么触发】on_pane_scroll=lambda *args, **kwargs: State.fake_event_handel(*args, **kwargs),
+        # 【不知道怎么触发】on_pane_mouse_move=lambda *args, **kwargs: State.fake_event_handel(*args, **kwargs),
+        # 【不知道怎么触发】on_pane_mouse_enter=lambda *args, **kwargs: State.fake_event_handel(*args, **kwargs),
+        # 【不知道怎么触发】on_pane_mouse_leave=lambda *args, **kwargs: State.fake_event_handel(*args, **kwargs),
         # endregion
 
         # region 事件处理程序——选择(select)事件
@@ -531,26 +577,24 @@ def component_react_flow() -> rx.Component:
     )
 
 # react_flow主要部分——使用示例
-def component_react_flow_demo() -> rx.Component:
+def component_flow_demo() -> rx.Component:
     '''
     - 组件在这个主要部分里面使用
     '''
-    return react_flow(
+    return flow(
         # 调用组件部分
         background(),
-        base_edge(),
-        control_button(),
+        # 【以后再说】base_edge(),    外观非功能，看不太懂，一直没效果
         controls(),
-        #edge_label_renderer(),  # 【未测试】【看不到变化】
-        edge_text(),
-        handle(),
+        #edge_label_renderer(),  # 【以后再说】【未测试】【看不到变化】
+        # edge_text(),    # 【以后再说】
+        #handle(),
         mini_map(),
-        node_resize_control(),
-        node_resizer(), # 这个还有很大问题，不知道如何使用，必须要修改，只是参数差不多了
-        node_toolbar(),  # 这个还有很大问题，不知道如何使用，必须要修改，只是参数差不多了
+        #node_resize_control(),
+        #node_resizer(), # 这个还有很大问题，不知道如何使用，必须要修改，只是参数差不多了
+        #node_toolbar(),  # 这个还有很大问题，不知道如何使用，必须要修改，只是参数差不多了
         #panel组件由组件 controls 或 mini_map内部使用     panel可帮助您将内容放置在视口上方
-        viewport_portal(),    # 这个还有很大问题，不知道如何使用，必须要修改
-
+        #viewport_portal(),    # 这个还有很大问题，不知道如何使用，必须要修改
 
 
 
@@ -558,11 +602,17 @@ def component_react_flow_demo() -> rx.Component:
         # 本身参数部分
         nodes_draggable=True,
         nodes_connectable=True,
-        on_connect=lambda e0: State.on_connect(e0),
-        on_nodes_change=lambda e0: State.on_nodes_change(e0),
+        #on_connect=lambda e0: State.on_connect(e0),
+        #on_nodes_change=lambda e0: State.on_nodes_change(e0),
         nodes=State.nodes,
         edges=State.edges,
-        fit_view=True
+        fit_view=True,
+
+        on_connect=State.fake_event_handel
+
+
+
+
     )
 
 
@@ -571,7 +621,11 @@ def component_react_flow_demo() -> rx.Component:
 # 下面是页面组件
 def index() -> rx.Component:
     return rx.vstack(
-        component_react_flow_demo(),
+        component_flow_demo(),
+
+
+
+
 
         rx.button(
             "清除图像",

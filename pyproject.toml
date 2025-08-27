@@ -3,9 +3,9 @@ requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "reflex-react-flow"
+name = "reflex-flow"
 version = "0.0.1"
-description = "Reflex custom component react-flow"
+description = "Reflex custom component flow"
 readme = "README.md"
 license = { text = "Apache-2.0" }
 requires-python = ">=3.10"
@@ -13,6 +13,8 @@ authors = [{ name = "", email = "nacxa0@gmail.com" }]
 keywords = ["reflex","reflex-custom-components"]
 
 dependencies = [
+    "custom-components>=0.0.1",
+    "dash>=3.2.0",
     "reflex==0.8.7",
 ]
 
