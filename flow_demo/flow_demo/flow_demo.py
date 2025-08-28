@@ -239,7 +239,6 @@ class State(rx.State):
             print(f"包含参五个数:类型={type(e)}, 值={e}")
 
 
-
 # region 下面是一级组件
 # 背景——完全版
 def component_background() -> rx.Component:
@@ -602,21 +601,21 @@ def component_flow_demo() -> rx.Component:
         # 本身参数部分
         nodes_draggable=True,
         nodes_connectable=True,
-        #on_connect=lambda e0: State.on_connect(e0),
-        #on_nodes_change=lambda e0: State.on_nodes_change(e0),
+        on_connect=lambda e0: State.on_connect(e0),
+        on_nodes_change=lambda e0: State.on_nodes_change(e0),
         nodes=State.nodes,
         edges=State.edges,
         fit_view=True,
-
-        on_connect=State.fake_event_handel
-
-
-
 
     )
 
 
 # endregion
+
+
+
+
+
 
 # 下面是页面组件
 def index() -> rx.Component:

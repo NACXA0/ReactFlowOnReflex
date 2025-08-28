@@ -5,6 +5,12 @@
 import reflex as rx
 from typing import Any, Dict, List, Union, Literal, TypedDict, Tuple, Callable, Iterable, TypeVar, Generic, Optional
 from reflex.components.component import NoSSRComponent
+from reflex.components import Component
+from reflex.vars import Var, VarData
+from reflex.constants import Hooks
+from reflex.components.el.elements import Div
+from reflex.utils.imports import ImportVar
+
 # 要包装的某些库可能需要动态导入。
 # 这是因为它们可能与服务器端渲染（SSR）不兼容。
 # 要在Reflex中处理这一点，您需要做的只是子类`NoSSRComponent`。
@@ -54,6 +60,7 @@ class FlowLib(NoSSRComponent):
     # 将自定义代码添加到组件
     # def _get_custom_code(self) -> str:
     #     return "const customCode = 'customCode';"
+
 
 # 基本(common)组件
 class Flow(FlowLib):
@@ -405,6 +412,168 @@ class Flow(FlowLib):
 
 
 
+    # region 导入包，为了hooks使用，上面组件需要的包reflex会自动导入。
+    def add_imports(self) -> dict[str, list[ImportVar]]:  # 这里是为了给hooks的使用而导入包，好像也能在hook的imports=里导入，区别还不清楚
+        return {
+            "@xyflow/react": [
+                ImportVar(tag="ReactFlowProvider"),  # 导入 Provider
+                # 已有的 hooks
+                #ImportVar(tag="useNodesState"),
+                #ImportVar(tag="useEdgesState"),
+                # 新增需要的 hook
+                #ImportVar(tag="useConnection"),  # 显式导入 useConnection
+            ]
+        }
+
+    # endregion
+
+
+    # 下面是Hooks***************
+    def add_hooks(self) -> list[str | tuple | Var]:
+    #    '''在这里添加基类的hooks'''
+        hooks = []
+
+        # 使用连接  https://reactflow.dev/api-reference/hooks/use-connection
+
+        hook_use_connection = 'const connection = useConnection();',
+            #_var_data=VarData(
+            #    imports={"@xyflow/react": ["useConnection"]},
+            #    position = Hooks.HookPosition.PRE_TRIGGER
+            #),
+
+        print(f'触发Hook：hook_use_connection:{hook_use_connection}')
+        hooks.append(hook_use_connection)
+        hook_use_connection2 = Var('useEffect() => {};',
+                _var_data = VarData(
+                    imports={"react": ["useEffect"]},
+                    position = Hooks.HookPosition.POST_TRIGGER
+                ),
+            )
+
+        print(f'触发Hook：hook_use_connection2:{hook_use_connection}')
+        hooks.append(hook_use_connection2)
+        做到这里了，这里是在添加hooks部分，结构基本上是添加在这里了，但是目前报错，可能是这个hook本身的调用问题。
+    1. 现在hooks返回空列表不报错
+    2. reflex实惠检测add_hooks和add_imports遮掩高度关键字def的，只要有这样的def就不一样。
+    3. 已知：add_hooks是写在组件类之内的， 只有组件类需要这个hook才写到这个组件内下面，不是统一写一起的。 当然，flow这个基类拥有大多数参数，对应着大多数hooks，所以大多数hooks写在这里面。
+    4. 上面组件对然也有导入包，但reflex会自动导入，而hook是得手动导入，现在这里是有问题
+        return []#hooks
+
+# region 下面是Hooks
+'''
+
+class ComponentWithHooks(Div, FlowLib):
+
+
+    def add_hooks(self) -> list[str | Var]:
+        '在这里添加公共hooks https://reflex.dev/docs/wrapping-react/custom-code-and-hooks/'
+        hooks = []
+
+        # 使用连接  https://reactflow.dev/api-reference/hooks/use-connection
+
+        hook_use_connection = Var("import { useConnection } from '@xyflow/react';" + "const connection = useConnection();",
+            _var_data=VarData(
+              imports={"react": ["useConnection"]},
+              # position = Hooks.HookPosition.PRE_TRIGGER
+            ),
+        )
+        print('触发Hook：hook_use_connection')
+        hooks.append(hook_use_connection)
+
+        # 使用边缘  https://reactflow.dev/api-reference/hooks/use-edges
+        hook_use_edge = 'const edges = useEdges();'
+        #hooks.append(hook_use_edge)
+
+        # 使用边缘state https://reactflow.dev/api-reference/hooks/use-edges-state
+        hook_use_edges_state = "const initialNodes = [];" + \
+            "const initialEdges = [];" + \
+            "const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);" + \
+            "const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);"
+         # 是的，变量放里面
+        #hooks.append(hook_use_edges_state)
+
+        # 【弃用】使用手柄连接    useHandleConnections被弃用，取而代之的是功能更强大的 useNodeConnections。  https://reactflow.dev/api-reference/hooks/use-handle-connections
+
+        # 使用内部节点    https://reactflow.dev/api-reference/hooks/use-internal-node
+        hook_use_internal_node = "const internalNode = useInternalNode('node-1');" +\
+            "const absolutePosition = internalNode.internals.positionAbsolute;"
+            
+        #hooks.append(hook_use_internal_node)
+
+        # 使用按键 https://reactflow.dev/api-reference/hooks/use-key-press
+        '这里还需要修改，要把所有的按键都添加进来吗？还是有什么方法可以全部都检测？'
+        hook_use_key_press = "const spacePressed = useKeyPress('Space');" +\
+            "const cmdAndSPressed = useKeyPress(['Meta+s', 'Strg+s']);"
+            
+        #hooks.append(hook_use_key_press)
+
+        # useNodeConnections    https://reactflow.dev/api-reference/hooks/use-node-connections
+        hook_use_node_connections = "const connections = useNodeConnections({handleType: 'target', handleId: 'my-handle'});"
+        #hooks.append(hook_use_node_connections)
+
+        # useNodeId https://reactflow.dev/api-reference/hooks/use-node-id
+        pass
+
+        # 使用节点  https://reactflow.dev/api-reference/hooks/use-nodes
+        hook_use_nodes = 'const nodes = useNodes();'
+        #hooks.append(hook_use_nodes)
+
+        # 使用节点数据    https://reactflow.dev/api-reference/hooks/use-nodes-data
+        hook_use_nodes_data = "const nodeData = useNodesData('nodeId-1');" +\
+            "const nodesData = useNodesData(['nodeId-1', 'nodeId-2']);"
+            
+        #hooks.append(hook_use_nodes_data)
+
+        # useNodesInitialized（） https://reactflow.dev/api-reference/hooks/use-nodes-initialized
+        pass
+
+        # 使用节点state https://reactflow.dev/api-reference/hooks/use-nodes-state
+        hook_use_nodes_state = "const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);" +\
+            "const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);"
+            
+        #hooks.append(hook_use_nodes_state)
+
+        # useOnSelectionChange（）    https://reactflow.dev/api-reference/hooks/use-on-selection-change
+        pass
+
+        # useOnViewportChange（） https://reactflow.dev/api-reference/hooks/use-on-viewport-change
+        pass
+
+        # 使用ReactFlow（） https://reactflow.dev/api-reference/hooks/use-react-flow
+        hook_use_react_flow = "const reactFlow = useReactFlow();" +\
+            "const [count, setCount] = useState(0);" +\
+            "const countNodes = useCallback(() => {setCount(reactFlow.getNodes().length);}, [reactFlow]);"
+            # you need to pass it as a dependency if you are using it with useEffect or useCallback
+            # because at the first render, it's not initialized yet and some functions might not work.
+            
+            
+        #hooks.append(hook_use_react_flow)
+
+        # 使用存储（）    https://reactflow.dev/api-reference/hooks/use-store
+        pass
+
+        # 使用存储 Api（）    https://reactflow.dev/api-reference/hooks/use-store-api
+        pass
+
+        # useUpdateNodeInternals   https://reactflow.dev/api-reference/hooks/use-update-node-internals
+        hook_use_update_node_internals = "const updateNodeInternals = useUpdateNodeInternals();" +\
+            "const [handleCount, setHandleCount] = useState(0);" +\
+            "const randomizeHandleCount = useCallback(() => {" +\
+                "setHandleCount(Math.floor(Math.random() * 10));" +\
+                "updateNodeInternals(id);" +\
+            "}, [id, updateNodeInternals]);"
+            
+        #hooks.append(hook_use_update_node_internals)
+
+        # 使用视口  https://reactflow.dev/api-reference/hooks/use-viewport
+        hook_use_viewport = 'const { x, y, zoom } = useViewport();'
+        #hooks.append(hook_use_viewport)
+
+
+        #return hooks
+
+'''
+# endregion
 
 
 
@@ -615,6 +784,9 @@ class ViewportPortal(FlowLib):
 
     # children=
 # endregion
+
+
+
 
 # region 下面是实例化组件
 flow = Flow.create

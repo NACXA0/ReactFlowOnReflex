@@ -53,6 +53,7 @@ Yes, I referred to the example of wrapping React Flow in the Reflex documentatio
   - 定义数据类型时。react-flow的数据类型 OnConnect 的数据类型定义为: rx.EventHandler[lambda e0: [e0]]  可选参数是一个事件处理器
   - 定义数据类型时。react-flow的数据类型 PanelPosition 的数据类型定义为: rx.Var[Literal['top-left', 'top-center', 'top-right', 'bottom-left', 'bottom-center', 'bottom-right']]  通常默认值是: 'bottom-right'  https://reactflow.dev/api-reference/types/panel-position
   - 变量连接的eventhandle类函数要不要加括号？ 不加，除非要传入参数  因为: 这里只是引用，加了就是执行了。
+  - 定义hooks中, react代码的hook **带参数的不用特别传参**,因为hook可以访问自定义代码中定义的变量。
   - 
 
 
@@ -147,7 +148,7 @@ Yes, I referred to the example of wrapping React Flow in the Reflex documentatio
     4. 4的增加声明，直到报错或者不执行，然后减少。
     5. 看一看几个参数的情况下时不报错且全部声明都执行的方案，那么实际参数量就是这个。
     6. 修改为准确的数量：var=lambda e0: State.fake_event_handel(e0)
-  - 
+  - 说是Hoooks不是集中管理的，而是放到Hooks对应组件的class的def add_hooks下
     
 - 报错经历:
   - 前端无法运行，报错如下:  问题:组件tag里的名称与react的名称不对应，reflex找不到react里对应的组件。 解决方法: 将tag名称改为react里对应的名称
