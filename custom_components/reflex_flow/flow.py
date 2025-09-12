@@ -410,75 +410,72 @@ class Flow(FlowLib):
     no_wheel_class_name: rx.Var[str] = 'nowheel'  # 通常，当鼠标悬停在画布上时滚动鼠标滚轮将缩放视口。 将类添加到画布上的元素 n 将阻止此行为和此 prop 允许您更改该类的名称。"nowheel"
     # endregion
 
-
-
-    # region 导入包，为了hooks使用，上面组件需要的包reflex会自动导入。
+    # region 下面是Hooks
+    # 导入包，为了hooks使用，上面组件需要的包reflex会自动导入。
     def add_imports(self) -> dict[str, list[ImportVar]]:  # 这里是为了给hooks的使用而导入包，好像也能在hook的imports=里导入，区别还不清楚
         return {
             "@xyflow/react": [
                 ImportVar(tag="ReactFlowProvider"),  # 导入 Provider
                 # 已有的 hooks
-                #ImportVar(tag="useNodesState"),
-                #ImportVar(tag="useEdgesState"),
+                ImportVar(tag="useNodesState"),
+                ImportVar(tag="useEdgesState"),
                 # 新增需要的 hook
-                #ImportVar(tag="useConnection"),  # 显式导入 useConnection
+                ImportVar(tag="useConnection"),  # 显式导入 useConnection
+                ImportVar(tag="useEdges"),  # 显式导入
+                ImportVar(tag="useHandleConnections"),  # 显式导入
+                ImportVar(tag="useInternalNode"),  # 显式导入
+                ImportVar(tag="useKeyPress"),  # 显式导入
+                ImportVar(tag="useNodeConnections"),  # 显式导入
+                ImportVar(tag="useNodeId"),  # 显式导入
+                ImportVar(tag="useNodes"),  # 显式导入
+                ImportVar(tag="useNodesData"),  # 显式导入
+                ImportVar(tag="useReactFlow"),  # 显式导入
+                ImportVar(tag="useNodesInitialized"),  # 显式导入
+                ImportVar(tag="useOnSelectionChange"),  # 显式导入
+                ImportVar(tag="useOnViewportChange"),  # 显式导入
+                ImportVar(tag="useStore"),  # 显式导入
+                ImportVar(tag="useStoreApi"),  # 显式导入
+                ImportVar(tag="useUpdateNodeInternals"),  # 显式导入
+                ImportVar(tag="useViewport"),  # 显式导入
             ]
         }
 
-    # endregion
 
 
-    # 下面是Hooks***************
-    def add_hooks(self) -> list[str | tuple | Var]:
-    #    '''在这里添加基类的hooks'''
-        hooks = []
 
-        # 使用连接  https://reactflow.dev/api-reference/hooks/use-connection
-
-        hook_use_connection = 'const connection = useConnection();',
-            #_var_data=VarData(
-            #    imports={"@xyflow/react": ["useConnection"]},
-            #    position = Hooks.HookPosition.PRE_TRIGGER
-            #),
-
-        print(f'触发Hook：hook_use_connection:{hook_use_connection}')
-        hooks.append(hook_use_connection)
-        hook_use_connection2 = Var('useEffect() => {};',
-                _var_data = VarData(
-                    imports={"react": ["useEffect"]},
-                    position = Hooks.HookPosition.POST_TRIGGER
-                ),
-            )
-
-        print(f'触发Hook：hook_use_connection2:{hook_use_connection}')
-        hooks.append(hook_use_connection2)
-        做到这里了，这里是在添加hooks部分，结构基本上是添加在这里了，但是目前报错，可能是这个hook本身的调用问题。
-    1. 现在hooks返回空列表不报错
-    2. reflex实惠检测add_hooks和add_imports遮掩高度关键字def的，只要有这样的def就不一样。
-    3. 已知：add_hooks是写在组件类之内的， 只有组件类需要这个hook才写到这个组件内下面，不是统一写一起的。 当然，flow这个基类拥有大多数参数，对应着大多数hooks，所以大多数hooks写在这里面。
-    4. 上面组件对然也有导入包，但reflex会自动导入，而hook是得手动导入，现在这里是有问题
-        return []#hooks
-
-# region 下面是Hooks
-'''
-
-class ComponentWithHooks(Div, FlowLib):
-
-
+    # 【暂停】下面是Hooks***************
     def add_hooks(self) -> list[str | Var]:
-        '在这里添加公共hooks https://reflex.dev/docs/wrapping-react/custom-code-and-hooks/'
+        '''
+        在这里添加基类的hooks
+        hooks不能无目的的调用，必须有需要执行的某些操作
+        hooks是仅限前端的行为动作，不存在于react hook本身，而是可以自己定义它的额外行为，这需要直接写js
+        '''
         hooks = []
 
         # 使用连接  https://reactflow.dev/api-reference/hooks/use-connection
 
-        hook_use_connection = Var("import { useConnection } from '@xyflow/react';" + "const connection = useConnection();",
-            _var_data=VarData(
-              imports={"react": ["useConnection"]},
-              # position = Hooks.HookPosition.PRE_TRIGGER
-            ),
-        )
-        print('触发Hook：hook_use_connection')
-        hooks.append(hook_use_connection)
+
+        # 保留参考，错误但可能有用
+        #hook_use_connection = Var('const connection = useConnection;', # ！最后不要加括号！
+        #    _var_data=VarData(
+        #        imports={"@xyflow/react": ["useConnection"]},
+        #        position = Hooks.HookPosition.PRE_TRIGGER
+        #    )
+        #)
+
+        #print(f'触发Hook：hook_use_connection:{hook_use_connection}')
+        #hooks.append(hook_use_connection)
+        #hook_use_effect = Var('useEffect() => {};',
+        #        _var_data = VarData(
+        #            imports={"react": ["useEffect"]},
+        #            position = Hooks.HookPosition.POST_TRIGGER
+        #        )
+        #    )
+
+        #print(f'触发Hook：hook_use_connection2:{hook_use_effect}')
+        #hooks.append(hook_use_effect)
+
+
 
         # 使用边缘  https://reactflow.dev/api-reference/hooks/use-edges
         hook_use_edge = 'const edges = useEdges();'
@@ -570,10 +567,10 @@ class ComponentWithHooks(Div, FlowLib):
         #hooks.append(hook_use_viewport)
 
 
-        #return hooks
+        return hooks
 
-'''
-# endregion
+
+    # endregion
 
 
 
@@ -691,6 +688,21 @@ class Handle(FlowLib):
     #isValidConnection       # 【不建议使用】【未知】将连接拖动到此句柄时调用。您可以使用此回调来执行一些 例如，基于连接目标和源的自定义验证逻辑。在可能的情况下， 我们建议您将此逻辑移动到主 ReactFlow 上的 prop 组件出于性能原因。isValidConnection
     onConnect: rx.EventHandler[lambda e0: [e0]]    # 建立连接时调用回调事件处理器
     # props https://reactflow.dev/api-reference/components/handle#props
+
+    # 导入包，为了hooks使用，上面组件需要的包reflex会自动导入。
+    def add_imports(self) -> dict[str, list[ImportVar]]:  # 这里是为了给hooks的使用而导入包，好像也能在hook的imports=里导入，区别还不清楚
+        return {
+            "@xyflow/react": [
+                ImportVar(tag="useUpdateNodeInternals"),  # 显式导入
+            ]
+        }
+
+    # hook
+    def add_hooks(self) -> list[str | Var]:
+        # 参考：https://reactflow.dev/api-reference/hooks/use-update-node-internals
+        return []
+
+
 
 class MiniMap(FlowLib):
 

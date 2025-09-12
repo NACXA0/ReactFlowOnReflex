@@ -597,7 +597,6 @@ def component_flow_demo() -> rx.Component:
 
 
 
-
         # 本身参数部分
         nodes_draggable=True,
         nodes_connectable=True,
@@ -617,13 +616,11 @@ def component_flow_demo() -> rx.Component:
 
 
 
+
 # 下面是页面组件
 def index() -> rx.Component:
     return rx.vstack(
         component_flow_demo(),
-
-
-
 
 
         rx.button(
@@ -644,8 +641,6 @@ def index() -> rx.Component:
         height="30em",
         width="100%",
     )
-
-
 
 
 

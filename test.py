@@ -40,33 +40,25 @@ class offical_switch_case:
         return words[0] + "".join([w.capitalize() for w in words[1:]])
 
 
-print(offical_switch_case.to_snake_case('onPaneContextMenu'))
+#print(offical_switch_case.to_snake_case('onPaneContextMenu'))
 
-{
-    'isValid': False, 'from': {'x': 124.99982508047702, 'y': 163.9999125402385},
-    'fromHandle': {'id': None, 'type': 'source'': '2', 'position': 'bottom', 'x': 71.99982508047702, 'y': 35.99991254023851, 'width': 6, 'height': 6}, 'fromPosition': 'bottom', 'fromNode': {'id': '2', 'type': 'default', 'data': {'label': '25'}, 'position': {'x': 50, 'y': 125}, 'measured': {'width': 150, 'height': 40}, 'internals': {'positionAbsolute':
-                       {'x': 50, 'y': 125}, 'handleBounds': {'source': [
-            {'id': None, 'type': 'source', 'nodeId': '2', 'position': 'bottom', 'x': 71.99982508047702,
-             'y': 35.99991254023851, 'width': 6, 'height': 6}], 'target': [
-    {'id': None, 'type': 'target', 'nodeId': '2', 'position': 'top', 'x': 71.99982508047702, 'y': -1.999994525565665,
-     'width': 6, 'height': 6}]}, 'z': 0, 'userNode': {'id': '2', 'type': 'default', 'data': {'label': '25'},
-                                                      'position': {'x': 50, 'y': 125}}}}, 'to': {'x': 416,
-                                                                                                 'y': 220}, 'toHandle': {
-    'id': None, 'type': 'source', 'nodeId': '4', 'position': 'bottom', 'x': 424.999825080477, 'y': 188.9999125402385,
-    'width': 6, 'height'
-    : 6}, 'toPosition': 'top', 'toNode': {'id': '4', 'type': 'default', 'data': {'label': '5'},
-                                          'position': {'x': 350, 'y': 150}, 'measured': {'width': 150, 'heig
-        ht': 40}, 'internals': {'positionAbsolute': {'x': 350, 'y': 150}, 'handleBounds': {'source': [{'id': None, 'type
-                                                                                         ': 'source', 'nodeId': '4
-                                                                                         ', 'position': 'botto
-                                                                                         m', 'x': 71.99982508047702, '
-                                                                                         y': 35.99991254023851, '
-                                                                                         width': 6, 'height': 6}], '
-                                                                                         target': [{'id': None, '
-                                                                                         type': 'target', 'nodeId': '
-                                                                                         4', 'position': 'top', 'x'
-: 71.99982508047702, 'y': -1.999994525565665, 'width': 6, 'height': 6}]}, 'z': 0, 'userNode': {'id': '4',
-                                                                                               'type': 'default',
-                                                                                               'data': {'label': '5'},
-                                                                                               'position': {'x': 350,
-                                                                                                            'y': 150}}}}}
+
+
+
+
+import requests
+import json
+
+
+url = "http://chenyou.top"
+
+ai = 'ABC...'
+data = {"题干": "张三说ABC", "age": 25, 'question': ai}
+response = requests.post(url, json=data)
+
+print(f"状态码: {response.status_code}")
+print(f"响应内容: {response.json()}")
+
+
+
+
