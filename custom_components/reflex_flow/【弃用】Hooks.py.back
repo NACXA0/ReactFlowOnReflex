@@ -1,4 +1,10 @@
-# 【以后再做】Hooks部分
+# Hooks部分
+# 弃用，Hooks不是这么用的
+# Hooks是用于自定义前端行为的。
+# 需要自定义前端行为的时候，需要用Hooks+写在Hooks里的自定义js代码来改变前端行为。
+# 如果只是需要默认前端行为则无需Hooks
+# Hooks写在了flow.py里，不是单独的文件
+
 
 import reflex as rx
 from reflex_flow import ReactFlowLib

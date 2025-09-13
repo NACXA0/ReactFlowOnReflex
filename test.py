@@ -49,16 +49,12 @@ class offical_switch_case:
 import requests
 import json
 
+import os
 
-url = "http://chenyou.top"
-
-ai = 'ABC...'
-data = {"题干": "张三说ABC", "age": 25, 'question': ai}
-response = requests.post(url, json=data)
-
-print(f"状态码: {response.status_code}")
-print(f"响应内容: {response.json()}")
-
-
+virtual_env = os.environ.get('VIRTUAL_ENV')
+if virtual_env:
+    print("当前在虚拟环境中，虚拟环境路径:", virtual_env)
+else:
+    print("不在虚拟环境中")
 
 
