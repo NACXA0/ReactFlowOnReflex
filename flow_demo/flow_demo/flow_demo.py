@@ -596,7 +596,6 @@ def component_flow_demo() -> rx.Component:
         #viewport_portal(),    # 这个还有很大问题，不知道如何使用，必须要修改
 
 
-
         # 本身参数部分
         nodes_draggable=True,
         nodes_connectable=True,

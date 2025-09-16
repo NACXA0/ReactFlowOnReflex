@@ -10,6 +10,7 @@ from reflex.vars import Var, VarData
 from reflex.constants import Hooks
 from reflex.components.el.elements import Div
 from reflex.utils.imports import ImportVar
+from .types import IsValidConnection, OnConnect, OnConnectStart, OnConnectEnd, OnDelete, OnEdgesChange, OnEdgesDelete, OnError, OnInit, OnMove, OnNodeDrag, OnNodesChange, OnNodesDelete, OnReconnect, OnSelectionChangeFunc, SelectionDragHandler
 
 # 要包装的某些库可能需要动态导入。
 # 这是因为它们可能与服务器端渲染（SSR）不兼容。
@@ -282,7 +283,7 @@ class Flow(FlowLib):
     only_render_visible_elements: rx.Var[bool] = False   # 你可以启用此优化来指示 React Flow 仅渲染视口中可见的节点和边缘。  当您拥有大量节点和 Edge 时，这可能会提高性能，但也会增加开销。
     translate_extent: rx.Var[List[List[float]] | None] = None    # 默认情况下，视口无限延伸。您可以使用此 prop 来设置边界。 第一对坐标是左上角的边界，第二对坐标是右下角的边界。
     node_extent: rx.Var[List[List[float]] | None] = None  # 默认情况下，节点可以放置在无限流上。您可以使用此 prop 来设置边界。 第一对坐标是左上角的边界，第二对坐标是右下角的边界。
-    prevent_scrolling:rx.Var[ bool] = True   # 禁用此属性将允许用户滚动页面，即使他们的指针位于流上。
+    prevent_scrolling:rx.Var[bool] = True   # 禁用此属性将允许用户滚动页面，即使他们的指针位于流上。
     attribution_position: rx.Var[Literal['top-left', 'top-center', 'top-right', 'bottom-left', 'bottom-center', 'bottom-right']] = 'bottom-right'     # 默认情况下，React Flow 会在流程的右下角渲染一个小的归因。    您可以使用此道具来更改其位置，以防您想在那里放置其他东西。
     # ..props
     # endregion
@@ -299,7 +300,7 @@ class Flow(FlowLib):
     # region 事件处理程序——一般(general)事件
     on_error: rx.EventHandler  # 【以后再做】【未测试成功, 不确定返回值】
     on_init: rx.EventHandler  # 【以后再做】【未测试成功, 不确定返回值】
-    on_delete: rx.EventHandler  # 【以后再做】【未测试成功, 不确定返回值】    # 删除节点或边缘时调用此事件处理程序。
+    on_delete: rx.EventHandler  # 删除节点或边缘时调用此事件处理程序。
     on_before_delete: rx.EventHandler  # 【以后再做】【未测试成功, 不确定返回值】
     # endregion
 
@@ -332,36 +333,36 @@ class Flow(FlowLib):
     # endregion
 
     # region 事件处理程序——连接(Connect)事件 OK
-    on_connect: rx.EventHandler[lambda e0: [e0]]  # 【未完全测试, 至少有一个返回值】当连接线完成并且用户连接了两个节点时，此事件将随新连接一起触发。 您可以使用该实用程序将连接转换为完整的边。addEdge  包含返回值dict: {'source': '4', 'sourceHandle': None, 'target': '5', 'targetHandle': None}
-    on_connect_start: rx.EventHandler[lambda e0, e1: [e0, e1]]  # 当用户开始拖动连接线时，将调用此事件处理程序。  注意: 在点击手柄拖动引出线的时候触发   包含两个参数(dict, dict): 值={'isTrusted': True}   值={'nodeId': '4', 'handleId': None, 'handleType': 'source'}
-    on_connect_end: rx.EventHandler[lambda e0, e1: [e0, e1]]    # 无论是否可以建立有效连接，此回调都会触发。您可以 使用第二个参数在连接时具有不同的行为 不成功。connectionState  注意: 引出连接线后，不论有没有连接上，只要松开线消失都会触发。  包含两个参数(dict, dict): 值={'isTrusted': True}  (很长)值={'isValid': False, 'from': {'x': 124.99982508047702, 'y': 163.9999125402385}, 'fromHandle': {'id': None, 'type': 'source'': '2', 'position': 'bottom', 'x': 71.99982508047702, 'y': 35.99991254023851, 'width': 6, 'height': 6}, 'fromPosition': 'bottom', 'fromNode': {'id': '2', 'type': 'default', 'data': {'label': '25'}, 'position': {'x': 50, 'y': 125}, 'measured': {'width': 150, 'height': 40}, 'internals': {'positionAbsolute':          {'x': 50, 'y': 125}, 'handleBounds': {'source': [{'id': None, 'type': 'source', 'nodeId': '2', 'position': 'bottom', 'x': 71.99982508047702, 'y': 35.99991254023851, 'width': 6, 'height': 6}], 'target': [{'id': None, 'type': 'target', 'nodeId': '2', 'position': 'top', 'x': 71.99982508047702, 'y': -1.999994525565665, 'width': 6, 'height': 6}]}, 'z': 0, 'userNode': {'id': '2', 'type': 'default', 'data': {'label': '25'}, 'position': {'x': 50, 'y': 125}}}}, 'to': {'x': 416, 'y': 220}, 'toHandle': {'id': None, 'type': 'source', 'nodeId': '4', 'position': 'bottom', 'x': 424.999825080477, 'y': 188.9999125402385, 'width': 6, 'height': 6}, 'toPosition': 'top', 'toNode': {'id': '4', 'type': 'default', 'data': {'label': '5'}, 'position': {'x': 350, 'y': 150}, 'measured': {'width': 150, 'height': 40}, 'internals': {'positionAbsolute': {'x': 350, 'y': 150}, 'handleBounds': {'source': [{'id': None, 'type': 'source', 'nodeId': '4', 'position': 'bottom', 'x': 71.99982508047702, 'y': 35.99991254023851, 'width': 6, 'height': 6}], 'target': [{'id': None, 'type': 'target', 'nodeId': '4', 'position': 'top', 'x': 71.99982508047702, 'y': -1.999994525565665, 'width': 6, 'height': 6}]}, 'z': 0, 'userNode': {'id': '4', 'type': 'default', 'data': {'label': '5'}, 'position': {'x': 350, 'y': 150}}}}}
-    on_click_connect_start: rx.EventHandler    # 【未测试成功, 不确定返回值】当用户点击拖动连接线时，将调用此事件处理程序。
-    on_click_connect_end: rx.EventHandler  # 【未测试成功, 不确定返回值】当用户松开拖动连接线时，将调用此事件处理程序。
-    is_valid_connection: rx.EventHandler[lambda e0: [e0]]   # 此回调可用于验证新连接   注意: 拖动连接线靠近另一个连接点时会触发很多次   包含返回值dict: {'source': '4', 'sourceHandle': None, 'target': '5', 'targetHandle': None}    如果返回，则不会将边缘添加到流中。 如果您有自定义连接逻辑，出于性能原因，最好使用此回调而不是句柄组件上的 prop。falseisValidConnection
+    on_connect: Optional[OnConnect]   # rx.EventHandler[lambda e0: [e0]]
+    on_connect_start: Optional[OnConnectStart]    # rx.EventHandler[lambda e0, e1: [e0, e1]]  # 当用户开始拖动连接线时，将调用此事件处理程序。  注意: 在点击手柄拖动引出线的时候触发   包含两个参数(dict, dict): 值={'isTrusted': True}   值={'nodeId': '4', 'handleId': None, 'handleType': 'source'}
+    on_connect_end: Optional[OnConnectEnd]    # rx.EventHandler[lambda e0, e1: [e0, e1]]  # 无论是否可以建立有效连接，此回调都会触发。您可以 使用第二个参数在连接时具有不同的行为 不成功。connectionState  注意: 引出连接线后，不论有没有连接上，只要松开线消失都会触发。  包含两个参数(dict, dict): 值={'isTrusted': True}  (很长)值={'isValid': False, 'from': {'x': 124.99982508047702, 'y': 163.9999125402385}, 'fromHandle': {'id': None, 'type': 'source'': '2', 'position': 'bottom', 'x': 71.99982508047702, 'y': 35.99991254023851, 'width': 6, 'height': 6}, 'fromPosition': 'bottom', 'fromNode': {'id': '2', 'type': 'default', 'data': {'label': '25'}, 'position': {'x': 50, 'y': 125}, 'measured': {'width': 150, 'height': 40}, 'internals': {'positionAbsolute':          {'x': 50, 'y': 125}, 'handleBounds': {'source': [{'id': None, 'type': 'source', 'nodeId': '2', 'position': 'bottom', 'x': 71.99982508047702, 'y': 35.99991254023851, 'width': 6, 'height': 6}], 'target': [{'id': None, 'type': 'target', 'nodeId': '2', 'position': 'top', 'x': 71.99982508047702, 'y': -1.999994525565665, 'width': 6, 'height': 6}]}, 'z': 0, 'userNode': {'id': '2', 'type': 'default', 'data': {'label': '25'}, 'position': {'x': 50, 'y': 125}}}}, 'to': {'x': 416, 'y': 220}, 'toHandle': {'id': None, 'type': 'source', 'nodeId': '4', 'position': 'bottom', 'x': 424.999825080477, 'y': 188.9999125402385, 'width': 6, 'height': 6}, 'toPosition': 'top', 'toNode': {'id': '4', 'type': 'default', 'data': {'label': '5'}, 'position': {'x': 350, 'y': 150}, 'measured': {'width': 150, 'height': 40}, 'internals': {'positionAbsolute': {'x': 350, 'y': 150}, 'handleBounds': {'source': [{'id': None, 'type': 'source', 'nodeId': '4', 'position': 'bottom', 'x': 71.99982508047702, 'y': 35.99991254023851, 'width': 6, 'height': 6}], 'target': [{'id': None, 'type': 'target', 'nodeId': '4', 'position': 'top', 'x': 71.99982508047702, 'y': -1.999994525565665, 'width': 6, 'height': 6}]}, 'z': 0, 'userNode': {'id': '4', 'type': 'default', 'data': {'label': '5'}, 'position': {'x': 350, 'y': 150}}}}}
+    on_click_connect_start: Optional[OnConnectStart]    # rx.EventHandler 【未测试，不确定返回值】 当用户点击拖动连接线时，将调用此事件处理程序。
+    on_click_connect_end: Optional[OnConnectEnd]  #rx.EventHandler  # 【未测试成功, 不确定返回值】当用户松开拖动连接线时，将调用此事件处理程序。
+    is_valid_connection: Optional[IsValidConnection]     # rx.EventHandler[lambda e0: [e0]]   # 此回调可用于验证新连接   注意: 拖动连接线靠近另一个连接点时会触发很多次   包含返回值dict: {'source': '4', 'sourceHandle': None, 'target': '5', 'targetHandle': None}    如果返回，则不会将边缘添加到流中。 如果您有自定义连接逻辑，出于性能原因，最好使用此回调而不是句柄组件上的 prop。falseisValidConnection
     # endregion
-
+    # 【做到这里了】这里是需要引入事件处理器的市局类型，这需要测试，然后一个一个搬过来
     # region 事件处理程序——窗格(Pane)事件 OK
-    on_move: rx.EventHandler[lambda e0, e1: [e0, e1]]  # 当用户平移或缩放视口时，将调用此事件处理程序。  包含两个返回值(dict, dict): 值={'isTrusted': True}  值={'x': 106.35714285714286, 'y': 13.999999999999943, 'zoom': 0.9085714285714286}
-    on_move_start: rx.EventHandler[lambda e0, e1: [e0, e1]] # 当用户开始平移或缩放视口时，将调用此事件处理程序。     包含两个返回值(dict, dict): 值={'isTrusted': True}  值=值={'x': 124.35714285714286, 'y': 16.99999999999997, 'zoom': 0.9085714285714286}
-    on_move_end: rx.EventHandler[lambda e0, e1: [e0, e1]]   # 当平移或缩放视口移动停止时调用此事件处理程序。 如果移动不是用户发起的，则事件参数将为 。null     包含两个返回值(dict, dict): 值={'isTrusted': True}  值=值={'x': 124.35714285714286, 'y': 16.99999999999997, 'zoom': 0.9085714285714286}
-    on_pane_click: rx.EventHandler # 当用户在窗格内单击时，将调用此事件处理程序。     无返回值
-    on_pane_context_menu: rx.EventHandler   # 当用户在窗格内右键单击时，将调用此事件处理程序。  无返回值
-    on_pane_scroll: rx.EventHandler    # 当用户在窗格内滚动时，将调用此事件处理程序。  无返回值   注意: 只有在滚轮放大到最大后再滚轮放大，或者滚轮缩小到最小后再缩小才会触发，每滚轮一格触发一次    调试注意: 需要先聚焦窗口，准备好才会触发
-    on_pane_mouse_move: rx.EventHandler # 当鼠标移动到窗格上时，将调用此事件处理程序。  无返回值  调试注意: 需要先聚焦窗口，准备好才会触发
-    on_pane_mouse_enter: rx.EventHandler    # 当鼠标进入窗格时，将调用此事件处理程序。  无返回值    调试注意: 需要先聚焦窗口，准备好才会触发
-    on_pane_mouse_leave: rx.EventHandler    # 当鼠标离开窗格时，将调用此事件处理程序。  无返回值    调试注意: 需要先聚焦窗口，准备好才会触发
+    on_move: Optional[OnMove] # rx.EventHandler[lambda e0, e1: [e0, e1]]  # 当用户平移或缩放视口时，将调用此事件处理程序。  包含两个返回值(dict, dict): 值={'isTrusted': True}  值={'x': 106.35714285714286, 'y': 13.999999999999943, 'zoom': 0.9085714285714286}
+    on_move_start: Optional[OnMove] # rx.EventHandler[lambda e0, e1: [e0, e1]] # 当用户开始平移或缩放视口时，将调用此事件处理程序。     包含两个返回值(dict, dict): 值={'isTrusted': True}  值=值={'x': 124.35714285714286, 'y': 16.99999999999997, 'zoom': 0.9085714285714286}
+    on_move_end: Optional[OnMove] # rx.EventHandler[lambda e0, e1: [e0, e1]]   # 当平移或缩放视口移动停止时调用此事件处理程序。 如果移动不是用户发起的，则事件参数将为 。null     包含两个返回值(dict, dict): 值={'isTrusted': True}  值=值={'x': 124.35714285714286, 'y': 16.99999999999997, 'zoom': 0.9085714285714286}
+    on_pane_click: Optional[rx.EventHandler[lambda event: [event]]] # 当用户在窗格内单击时，将调用此事件处理程序。     无返回值
+    on_pane_context_menu: Optional[rx.EventHandler]   # 当用户在窗格内右键单击时，将调用此事件处理程序。  无返回值
+    on_pane_scroll: Optional[rx.EventHandler]    # 当用户在窗格内滚动时，将调用此事件处理程序。  无返回值   注意: 只有在滚轮放大到最大后再滚轮放大，或者滚轮缩小到最小后再缩小才会触发，每滚轮一格触发一次    调试注意: 需要先聚焦窗口，准备好才会触发
+    on_pane_mouse_move: Optional[rx.EventHandler[lambda event: [event]]] # 当鼠标移动到窗格上时，将调用此事件处理程序。  无返回值  调试注意: 需要先聚焦窗口，准备好才会触发
+    on_pane_mouse_enter: Optional[rx.EventHandler[lambda event: [event]]]    # 当鼠标进入窗格时，将调用此事件处理程序。  无返回值    调试注意: 需要先聚焦窗口，准备好才会触发
+    on_pane_mouse_leave: Optional[rx.EventHandler[lambda event: [event]]]    # 当鼠标离开窗格时，将调用此事件处理程序。  无返回值    调试注意: 需要先聚焦窗口，准备好才会触发
     # endregion
 
     # region 事件处理程序——选择(select)事件
-    on_selection_change: rx.EventHandler   # 【未测试成功, 不确定返回值】当用户更改流中的选定元素组时，将调用此事件处理程序。
-    on_selection_drag_start: rx.EventHandler[lambda e0: [e0]]    # 【未测试成功, 不确定返回值】当用户开始拖动选择框时，将调用此事件处理程序。
-    on_selection_drag: rx.EventHandler[lambda e0: [e0]] # 【未测试成功, 不确定返回值】当用户拖动选择框时，将调用此事件处理程序。
-    on_selection_drag_top: rx.EventHandler[lambda e0: [e0]] # 【未测试成功, 不确定返回值】当用户停止拖动选择框时，将调用此事件处理程序。
-    on_selection_start: rx.EventHandler[lambda e0: [e0]]    # 【未测试成功, 不确定返回值】当用户选择开始时，将调用此事件处理程序。
-    on_selection_end: rx.EventHandler[lambda e0: [e0]]  # 【未测试成功, 不确定返回值】当用户选择结束时，将调用此事件处理程序。
-    on_selection_context_menu: rx.EventHandler[lambda e0: [e0]]  # 【未测试成功, 不确定返回值】当用户右键单击节点选择时，将调用此事件处理程序。
+    on_selection_change: OnSelectionChangeFunc  # rx.EventHandler   # 【未测试成功, 不确定返回值】当用户更改流中的选定元素组时，将调用此事件处理程序。
+    on_selection_drag_start: SelectionDragHandler   # rx.EventHandler[lambda e0: [e0]]    # 【未测试成功, 不确定返回值】当用户开始拖动选择框时，将调用此事件处理程序。
+    on_selection_drag: SelectionDragHandler   # rx.EventHandler[lambda e0: [e0]] # 【未测试成功, 不确定返回值】当用户拖动选择框时，将调用此事件处理程序。
+    on_selection_drag_top: SelectionDragHandler   # rx.EventHandler[lambda e0: [e0]] # 【未测试成功, 不确定返回值】当用户停止拖动选择框时，将调用此事件处理程序。
+    on_selection_start: rx.EventHandler[lambda event: [event]]    # 【未测试成功, 不确定返回值】当用户选择开始时，将调用此事件处理程序。
+    on_selection_end: rx.EventHandler[lambda event: [event]]  # 【未测试成功, 不确定返回值】当用户选择结束时，将调用此事件处理程序。
+    on_selection_context_menu: rx.EventHandler[lambda event, nodes: [event, nodes]]  # 【未测试成功, 不确定返回值】当用户右键单击节点选择时，将调用此事件处理程序。
     # endregion
-
+    做到这里了，下面如何还有事件处理器，就从types导入
     # region 下面是交互(interaction)道具
     nodes_draggable: rx.Var[bool] = True  # 控制所有节点是否应可拖动
     nodes_connectable: rx.Var[bool] = True  # 控制所有节点是否应可连接

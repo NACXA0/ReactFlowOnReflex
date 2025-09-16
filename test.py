@@ -1,4 +1,4 @@
-import re
+import re, requests, json, os
 
 # 官方的命名转换，可能用于包裹react时，将react组件参数的camel(驼峰命名法)转为snake(蛇形命名法)
 class offical_switch_case:
@@ -44,17 +44,20 @@ class offical_switch_case:
 
 
 
+from pydantic import BaseModel
+from typing import Optional, TypeVar
+
+NodeId = str
+X: NodeId
 
 
-import requests
-import json
+class MyModel(BaseModel):
+    name: str
+    age: int
 
-import os
+# 创建实例
+model = MyModel(name="Alice", age=30)
 
-virtual_env = os.environ.get('VIRTUAL_ENV')
-if virtual_env:
-    print("当前在虚拟环境中，虚拟环境路径:", virtual_env)
-else:
-    print("不在虚拟环境中")
-
+# 查看类型
+print(type(model))  # <class '__main__.MyModel'>
 

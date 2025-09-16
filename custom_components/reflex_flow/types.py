@@ -26,6 +26,12 @@
     转换为：
         Optional[List[float]]
 
+    - 对于 on_  这类事件处理器的数据类型，     所有返回是Returns:   Type: void 这样的也都是事件处理器类型
+        都是 rx.EventHandler[lambda e0: [e0]] 的形式
+        根据文档可以判读出这个数据类型接收几个参数，不用向以前那样猜
+
+    -
+
 未解决的问题：
     1. 对于文档中的   XXX？   	string | null   这一类     对应的JS是   XXX?: string | null;
         不知道如何其完美嵌入，
@@ -43,6 +49,7 @@ import math
 from reflex.components.el.elements.base import AriaRole, AutoCapitalize, ContentEditable, EnterKeyHint, InputMode
 from reflex.components.component import Component
 
+
 # 有些class在react文档中的数据类型声明靠后的，但是前面有需要要调用靠后面的: 还是调整顺序，优先于python调用吧，不遵从文档了
 # reflex包裹react的数据类型不是都要定义为类
 # 需要定义为响应式状态变量需要用 rx.Var[] 包裹
@@ -54,13 +61,13 @@ from reflex.components.component import Component
 # reflex里好像有CSS专用的，很可能就是这个 rx.style.Style，
 # 总之先隔离出来，统一管理使用
 ###
-CSSType: rx.style.Style
+CSSType = rx.style.Style
 
 ### 对AriaRole的说明:
 # 这个是我自己定义的，同CSSProperties都是来自react的类型
 # reflex里好像有AriaRole专用的, 很可能就是这个 from reflex.components.el.elements.base import AriaRole
 ###
-AriaRole: AriaRole
+AriaRole = AriaRole
 
 class AriaLiveMessageParams(TypedDict):
     """
@@ -113,8 +120,8 @@ class ControlsAriaLabel(rx.Base):
     # 基础字符串字段：交互开关无障碍标签
     interactive: dict[str, str] = {"ariaLabel": "Toggle Interactivity"}  # 对应 controls.interactive.ariaLabel
 
-NodeId: str
-EdgeId: str
+NodeId = str
+EdgeId = str
 
 EdgeChangeType = Literal['add', 'update', 'remove']
 
@@ -206,12 +213,12 @@ class Data(TypedDict):
     />
 
 '''
-NodeType: Union[str, None, Literal["default", "input", "output", "group"]] = None # 可选内容出处: https://reactflow.dev/api-reference/types/node#default-node-types
+NodeType = Union[str, None, Literal["default", "input", "output", "group"]] # 可选内容出处: https://reactflow.dev/api-reference/types/node#default-node-types
 # EdgeType与上面的NodeType同理： EdgeType extends string | undefined = string | undefined  出处：https://github.com/xyflow/xyflow/blob/88cf48289333903ac0f41c6afc12b51ca261e208/packages/react/src/types/edges.ts#L55
-EdgeType: Union[str, None, Literal["default", "straight", "step", "smoothstep", "simplebezier"]] = None # 可选内容出处：https://reactflow.dev/api-reference/types/node#default-node-types
+EdgeType = Union[str, None, Literal["default", "straight", "step", "smoothstep", "simplebezier"]] # 可选内容出处：https://reactflow.dev/api-reference/types/node#default-node-types
 
-NodeData: dict[str, Any] #（对应 TS 的 Record<string, unknown>） 出处： NodeData extends Record<string, unknown> = Record<string, unknown>, https://github.com/xyflow/xyflow/blob/88cf48289333903ac0f41c6afc12b51ca261e208/packages/system/src/types/nodes.ts#L12C3-L12C70
-EdgeData: dict[str, Any] #（对应 TS 的 Record<string, unknown>） 出处： EdgeData extends Record<string, unknown> = Record<string, unknown>, https://github.com/xyflow/xyflow/blob/88cf48289333903ac0f41c6afc12b51ca261e208/packages/system/src/types/edges.ts#L4
+NodeData = dict[str, Any] #（对应 TS 的 Record<string, unknown>） 出处： NodeData extends Record<string, unknown> = Record<string, unknown>, https://github.com/xyflow/xyflow/blob/88cf48289333903ac0f41c6afc12b51ca261e208/packages/system/src/types/nodes.ts#L12C3-L12C70
+EdgeData = dict[str, Any] #（对应 TS 的 Record<string, unknown>） 出处： EdgeData extends Record<string, unknown> = Record<string, unknown>, https://github.com/xyflow/xyflow/blob/88cf48289333903ac0f41c6afc12b51ca261e208/packages/system/src/types/edges.ts#L4
 
 class Measured(TypedDict):
     width: Optional[float]
@@ -221,6 +228,63 @@ class Dimensions:   # https://github.com/xyflow/xyflow/blob/88cf48289333903ac0f4
   width: float
   height: float
 
+###
+# ReactNode 类型：包含基础类型 + Reflex 组件 + 可迭代的 ReactNode（如列表）
+# https://github.com/DefinitelyTyped/DefinitelyTyped/blob/6b9db9cb6de7119fa63ab3ce81c8544b40af04ed/types/react/index.d.ts#L427
+# 说是支持react的所有类型，这个有点迷惑，不知道对不对【以后再说】
+# 不用Any：ReactNode 的本质是 “有限范围的可渲染内容集合”，而非 “任意值”
+# JS代码：/**
+#      * Represents all of the things React can render.
+#      *
+#      * Where {@link ReactElement} only represents JSX, `ReactNode` represents everything that can be rendered.
+#      *
+#      * @see {@link https://react-typescript-cheatsheet.netlify.app/docs/react-types/reactnode/ React TypeScript Cheatsheet}
+#      *
+#      * @example
+#      *
+#      * ```tsx
+#      * // Typing children
+#      * type Props = { children: ReactNode }
+#      *
+#      * const Component = ({ children }: Props) => <div>{children}</div>
+#      *
+#      * <Component>hello</Component>
+#      * ```
+#      *
+#      * @example
+#      *
+#      * ```tsx
+#      * // Typing a custom element
+#      * type Props = { customElement: ReactNode }
+#      *
+#      * const Component = ({ customElement }: Props) => <div>{customElement}</div>
+#      *
+#      * <Component customElement={<div>hello</div>} />
+#      * ```
+#      */
+#     // non-thenables need to be kept in sync with AwaitedReactNode
+#     type ReactNode =
+#         | ReactElement
+#         | string
+#         | number
+#         | bigint
+#         | Iterable<ReactNode>
+#         | ReactPortal
+#         | boolean
+#         | null
+#         | undefined
+#         | DO_NOT_USE_OR_YOU_WILL_BE_FIRED_EXPERIMENTAL_REACT_NODES[
+#             keyof DO_NOT_USE_OR_YOU_WILL_BE_FIRED_EXPERIMENTAL_REACT_NODES
+#         ]
+#         | Promise<AwaitedReactNode>;
+###
+# 基础可渲染类型：字符串、数字、布尔值、None（对应 JS 的 null/undefined）
+ReactNode = Union[
+    str, int, float, bool, None,    # 常规类型
+    Component,  # Reflex 组件（对应 JS 的 ReactElement 和 ReactPortal（对应 Reflex 中的：rx.portal 组件(来源： from reflex.components.el.elements.media import portal)））
+    Iterable["ReactNode"],  # 可迭代的 ReactNode（如列表、生成器）
+    rx.Var["ReactNode"]  # 支持 Reflex 的响应式变量（对应同步的Promise<AwaitedReactNode> ，异步的就是对此的应用来实现）
+]
 
 # endregion
 
@@ -334,7 +398,7 @@ CoordinateExtent = Union[
 
 
 
-MarkerType: Literal["arrow", "arrowclosed"] # EdgeMarker的前置类型声明 出处：export enum MarkerType {Arrow = 'arrow', ArrowClosed = 'arrowclosed'}   https://github.com/xyflow/xyflow/blob/88cf48289333903ac0f41c6afc12b51ca261e208/packages/system/src/types/edges.ts#L110
+MarkerType = Literal["arrow", "arrowclosed"] # EdgeMarker的前置类型声明 出处：export enum MarkerType {Arrow = 'arrow', ArrowClosed = 'arrowclosed'}   https://github.com/xyflow/xyflow/blob/88cf48289333903ac0f41c6afc12b51ca261e208/packages/system/src/types/edges.ts#L110
 class EdgeMarker(TypedDict):
     type: Literal[MarkerType, "arrow", "arrowclosed"]  # 出处：  type: MarkerType | `${MarkerType}`;    后面的`${MarkerType}`是说在JS里用字符串的方式传入MarkerType，这里都统一为字符串了。
     color: Optional[str] = None
@@ -362,7 +426,7 @@ class DefaultEdgeOptions(TypedDict):
     zIndex: Optional[int]
     ariaLabel: Optional[str]
     interactionWidth: Optional[int]  # ReactFlow 在每个边缘周围渲染一条不可见的路径，使它们更容易单击或点击。 此属性设置该不可见路径的宽度。
-    label: Optional[Nodes]   #【以后在做】ReactNode是什么？https://github.com/DefinitelyTyped/DefinitelyTyped/blob/946e2f414c7016bbe426ecba89d823c9a86be017/types/react/index.d.ts#L427 # 要沿边缘渲染的标签或自定义元素。这通常是文本标签或一些 自定义控件。
+    label: Optional[ReactNode]   # 看起来现在是正确的，也可能是引用下面那个Nodes #【以后在做】ReactNode是什么？https://github.com/DefinitelyTyped/DefinitelyTyped/blob/946e2f414c7016bbe426ecba89d823c9a86be017/types/react/index.d.ts#L427 # 要沿边缘渲染的标签或自定义元素。这通常是文本标签或一些 自定义控件。
     labelStyle: Optional[CSSType]  # 要应用于标签的自定义样式。
     labelShowBg: Optional[bool]
     labelBgStyle: Optional[CSSType]
@@ -379,7 +443,7 @@ class DeleteElements:
     pass
 
 
-EdgeMarkerType: Union[str, EdgeMarker]  # Edges的前置类型声明  出处：export type EdgeMarkerType = string | EdgeMarker; https://github.com/xyflow/xyflow/blob/88cf48289333903ac0f41c6afc12b51ca261e208/packages/system/src/types/edges.ts#L102
+EdgeMarkerType = Union[str, EdgeMarker]  # Edges的前置类型声明  出处：export type EdgeMarkerType = string | EdgeMarker; https://github.com/xyflow/xyflow/blob/88cf48289333903ac0f41c6afc12b51ca261e208/packages/system/src/types/edges.ts#L102
 class Edges:
     '''
     出处：https://github.com/xyflow/xyflow/blob/main/packages/system/src/types/edges.ts#L3
@@ -480,9 +544,6 @@ class EdgeMouseHandler:
     pass
 
 class EdgeProps:
-
-
-
     # 新增两个字段（JS 中添加的 data: any 和 type: any）
     # 增加字段的原因：  https://github.com/xyflow/xyflow/blob/88cf48289333903ac0f41c6afc12b51ca261e208/packages/react/src/types/general.ts#L79
     #   源自：export type EdgeTypes = Record<
@@ -518,7 +579,7 @@ class EdgeProps:
 # 新代码增加的两个参数增加到了EdgeProps里
 # 需要导入 from reflex.components.component import Component
 ###
-EdgeTypes: Dict[str, Type[Component]]
+EdgeTypes = Dict[str, Type[Component]]
 
 
 class Handle:
@@ -594,7 +655,7 @@ class NodeHandle:
     position: Position
     type: HandleType
 
-NodeOrigin: Union[List[float], Tuple[float, float]] # 节点相对于其位置的原点。 取值范围: 0~1 示例： [0, 0]、 [0.5, 0.5]、 [1, 1]      [0, 0]左上↖、[0.5, 0.5]中央·、[1, 1]右下↘       也可以传入元组
+NodeOrigin = Union[List[float], Tuple[float, float]] # 节点相对于其位置的原点。 取值范围: 0~1 示例： [0, 0]、 [0.5, 0.5]、 [1, 1]      [0, 0]左上↖、[0.5, 0.5]中央·、[1, 1]右下↘       也可以传入元组
 
 class Nodes(TypedDict):
     '''
@@ -623,7 +684,7 @@ class Nodes(TypedDict):
     initialHeight: Optional[float]
     parentId: Optional[str]   # 父节点 ID，用于创建子流。
     zIndex: Optional[int]
-    extent: Optional[Literal['parent'], CoordinateExtent] = None   # 可以移动节点的边界。    示例： 'parent'、 [[0, 0], [100, 100]]
+    extent: Optional[Union[Literal['parent'], CoordinateExtent]] = None   # 可以移动节点的边界。    示例： 'parent'、 [[0, 0], [100, 100]]
     expandParent: Optional[bool]  # 如果将父节点拖动到 父节点的边界
     ariaLabel: Optional[str]
     origin: Optional[NodeOrigin]  # 节点相对于其位置的原点。 示例： [0.5, 0.5] // centers the node、[0, 0] // top left、[1, 1] // bottom right
@@ -697,10 +758,9 @@ class InternalNode: # 【！！潜在问题】
     internals: InternalNodeInternals
 
 
-class IsValidConnection:
-    pass
+IsValidConnection = Union[Connection, Edges] # rx.EventHandler[lambda edge: [edge]]    # 【以后再说】 这个有点不太一样，好像不是事件处理器, 腺癌时合理的但还没有测试
 
-KeyCode: Union[str, List[str]]
+KeyCode = Union[str, List[str]]
 
 MarkerType = Literal['arrow', 'arrowclosed']
 
@@ -813,54 +873,37 @@ class NodeProps:    # 可能要加  (rx.Base)       【以后再做】【很可�
 # 新代码增加的两个参数增加到了NodeProps里
 # 需要导入 from reflex.components.component import Component
 ###
-NodeTypes: Dict[str, Type[Component]] # 详见上方NodeType注释 注！NodeTypes≠NodeType， 这里是存放供NodeType调用的Component
+NodeTypes = Dict[str, Type[Component]] # 详见上方NodeType注释 注！NodeTypes≠NodeType， 这里是存放供NodeType调用的Component
 
+OnBeforeDelete: rx.EventHandler[lambda __0: [__0]]  # 【以后再说】这个好像不太一样    # https://reactflow.dev/api-reference/types/on-before-delete
 
-class OnBeforeDelete:
-    pass
+OnConnect = rx.EventHandler[lambda connection: [connection]]  # 接收一个参数  connection  当连接线完成并且用户连接了两个节点时，此事件将随新连接一起触发。 您可以使用该实用程序将连接转换为完整的边。addEdge  包含返回值dict: {'source': '4', 'sourceHandle': None, 'target': '5', 'targetHandle': None}
 
-class OnConnect:
-    pass
+OnConnectEnd = rx.EventHandler[lambda event, connectionState: [event, connectionState]]    # 接收两个参数 event connectionState 无论是否可以建立有效连接，此回调都会触发。您可以 使用第二个参数在连接时具有不同的行为 不成功。connectionState  注意: 引出连接线后，不论有没有连接上，只要松开线消失都会触发。  包含两个参数(dict, dict): 值={'isTrusted': True}  (很长)值={'isValid': False, 'from': {'x': 124.99982508047702, 'y': 163.9999125402385}, 'fromHandle': {'id': None, 'type': 'source'': '2', 'position': 'bottom', 'x': 71.99982508047702, 'y': 35.99991254023851, 'width': 6, 'height': 6}, 'fromPosition': 'bottom', 'fromNode': {'id': '2', 'type': 'default', 'data': {'label': '25'}, 'position': {'x': 50, 'y': 125}, 'measured': {'width': 150, 'height': 40}, 'internals': {'positionAbsolute':          {'x': 50, 'y': 125}, 'handleBounds': {'source': [{'id': None, 'type': 'source', 'nodeId': '2', 'position': 'bottom', 'x': 71.99982508047702, 'y': 35.99991254023851, 'width': 6, 'height': 6}], 'target': [{'id': None, 'type': 'target', 'nodeId': '2', 'position': 'top', 'x': 71.99982508047702, 'y': -1.999994525565665, 'width': 6, 'height': 6}]}, 'z': 0, 'userNode': {'id': '2', 'type': 'default', 'data': {'label': '25'}, 'position': {'x': 50, 'y': 125}}}}, 'to': {'x': 416, 'y': 220}, 'toHandle': {'id': None, 'type': 'source', 'nodeId': '4', 'position': 'bottom', 'x': 424.999825080477, 'y': 188.9999125402385, 'width': 6, 'height': 6}, 'toPosition': 'top', 'toNode': {'id': '4', 'type': 'default', 'data': {'label': '5'}, 'position': {'x': 350, 'y': 150}, 'measured': {'width': 150, 'height': 40}, 'internals': {'positionAbsolute': {'x': 350, 'y': 150}, 'handleBounds': {'source': [{'id': None, 'type': 'source', 'nodeId': '4', 'position': 'bottom', 'x': 71.99982508047702, 'y': 35.99991254023851, 'width': 6, 'height': 6}], 'target': [{'id': None, 'type': 'target', 'nodeId': '4', 'position': 'top', 'x': 71.99982508047702, 'y': -1.999994525565665, 'width': 6, 'height': 6}]}, 'z': 0, 'userNode': {'id': '4', 'type': 'default', 'data': {'label': '5'}, 'position': {'x': 350, 'y': 150}}}}}
 
-class OnConnectEnd:
-    pass
-做到这里了，下面的待确认数据类型是否正确
-上面的有些还要补充，修改、更正
-class OnConnectStart:
-    pass
+OnConnectStart = rx.EventHandler[lambda event, params: [event, params]]  #  接收两个参数 event params        (dict, dict): 值={'isTrusted': True}   值={'nodeId': '4', 'handleId': None, 'handleType': 'source'}
 
-class OnDelete:
-    pass
+OnDelete = rx.EventHandler[lambda params: [params]]  # 接收一个参数   params	{ nodes: NodeType[]; edges: EdgeType[]; }
 
-class OnEdgesChange:
-    pass
+OnEdgesChange = rx.EventHandler[lambda changes: [changes]]    # 接收一个参数 changes	EdgeChange<EdgeType>[]
 
-class OnEdgesDelete:
-    pass
+OnEdgesDelete = rx.EventHandler[lambda edges: [edges]]    # 接收一个参数 edges	EdgeType[]
 
-class OnError:
-    pass
+OnError = rx.EventHandler[lambda id, message: [id, message]]  # 接收两个参数    id	string	message	string
 
-class OnInit:
-    pass
+OnInit = rx.EventHandler[lambda reactFlowInstance: [reactFlowInstance]]   # 接收一个参数 reactFlowInstance	ReactFlowInstance<NodeType, EdgeType>
 
-class OnMove:
-    pass
+OnMove = rx.EventHandler[lambda event, viewport: [event, viewport]]   # 接收两个参数  event	MouseEvent | TouchEvent	    viewport	Viewport
 
-class OnNodeDrag:
-    pass
+OnNodeDrag = rx.EventHandler[lambda event, node, nodes: [event, node, nodes]]   # 接收三个参数
 
-class OnNodesChange:
-    pass
+OnNodesChange = rx.EventHandler[lambda changes: [changes]]  # 接收一个参数    changes	NodeChange<NodeType>[]
 
-class OnNodesDelete:
-    pass
+OnNodesDelete = rx.EventHandler[lambda nodes: [nodes]]  # 接收一个参数  nodes	NodeType[]
 
-class OnReconnect:
-    pass
+OnReconnect = rx.EventHandler[lambda oldEdge, newConnection: [oldEdge, newConnection]]  # 接收两个参数
 
-class OnSelectionChangeFunc:
-    pass
+OnSelectionChangeFunc = rx.EventHandler[lambda params: [params]]    # 接收一个参数    params	OnSelectionChangeParams<NodeType, EdgeType>
 
 PanOnScrollMode = Literal['free', 'vertical', 'horizontal']
 
@@ -879,13 +922,31 @@ PanelPosition = Literal[
 
 
 class ProOptions(TypedDict):
-    account: str
+    account: Optional[str]
     hideAttribution: bool
 
 class ReactFlowInstance:
     pass
+    #getNodes
+    #setNodes
+    #addNodes
+    #getNode
+    #getInternalNode
+    #getEdges
+    #setEdges
+    #addEdges
+    #getEdge
+    #toObject
+    #deleteElements
+    #updateNode
+    #updateNodeData
+    #updateEdge
+    #updateEdgeData
+    #getNodesBounds
+    #getHandleConnections
+    #getNodeConnections
 
-class Viewport(rx.BaseModel):
+class Viewport:
     """
     React Flow 视图窗口配置类，包含以下核心字段：
     - x: 水平偏移量（px）
@@ -897,7 +958,7 @@ class Viewport(rx.BaseModel):
     # 必选：垂直偏移量（正数向下，负数向上）
     y: float
     # 必选：缩放比例（默认值设为 1.0，符合 React Flow 初始缩放）
-    zoom: float = 1.0
+    zoom: float = 1.0   # 虽然文档没有默认值，但还是1.0规范一下。
 
 class ReactFlowJsonObject:
     nodes: Nodes
@@ -916,19 +977,15 @@ class ResizeParams:
     width: float
     height: float
 
-class SelectionDragHandler:
-    pass
+SelectionDragHandler = rx.EventHandler[lambda event, nodes: [event, nodes]] # # 接收两个参数
+
 
 SelectionMode = Literal['partial', 'full']
 
-class SnapGrid:
-    """
-    SnapGrid 的分步长对象类型：横向（x）和纵向（y）步长可单独设置
-    - x: 横向吸附步长（单位：px）
-    - y: 纵向吸附步长（单位：px）
-    """
-    x: float  # 横向步长（必选，无默认值，需显式传入）
-    y: float  # 纵向步长（必选，无默认值，需显式传入）
+SnapGrid = Union[
+    List[float],  # 列表形式：[x, y]
+    Tuple[float, float]  # 元组形式：(x, y)
+]  # 长度为2的列表 type SnapGrid = [number, number];  SnapGrid 类型定义窗格上捕捉节点的网格大小。它与 snapToGrid 属性结合使用以启用网格捕捉功能。
 
 
 
