@@ -61,3 +61,9 @@ model = MyModel(name="Alice", age=30)
 # 查看类型
 print(type(model))  # <class '__main__.MyModel'>
 
+list: [
+    {'id': '1', 'type': 'dimensions','dimensions': {'width': 150,'height': 40}},
+    {'id': '2', 'type': 'dimensions','dimensions': {'width':150, 'height': 40}},
+    {'id': '3', 'type': 'dimensions','dimensions': {'width': 150,'height': 40}},
+    {'id': '4', 'type': 'dimensions','dimensions': {'width': 150,'height': 40}}
+]

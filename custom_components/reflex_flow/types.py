@@ -30,7 +30,51 @@
         都是 rx.EventHandler[lambda e0: [e0]] 的形式
         根据文档可以判读出这个数据类型接收几个参数，不用向以前那样猜
 
-    -
+    -JS示例：
+        export type GetZoom = () => number;
+    转换为：
+        GetZoom = Callable[[], float]   # 输入为空，输出为float
+
+    - JS示例：
+        export type ZoomTo = (zoomLevel: number, options?: ViewportHelperFunctionOptions) => Promise<boolean>;
+    转换为：
+          ZoomTo = Callable[
+        [
+            float,  # zoomLevel: number
+            Optional[ViewportHelperFunctionOptions] # options?: ViewportHelperFunctionOptions
+        ],
+        bool    # 返回 Promise<boolean>，但在 Python 中直接返回 bool
+    ]
+    -# Partial将所有内容变为可选的， 也就是自动加上了Option，还是在原始变量上留出余地，都加上一个None吧
+    - 所有JS是 ={} 的数据都是dict的形式，要加上 (TypedDict)
+    JS示例：
+        export type Viewport = {
+          x: number;
+          y: number;
+          zoom: number;
+        };
+    转换为：
+        class Viewport(TypedDict):
+        """
+        默认值： { 'x': 0, 'y': 0, 'zoom': 1 }
+        因为是dict，所以要加(TypedDict)
+        """
+        x: float
+        y: float
+        zoom: float # 默认值设为 1.0 这里不能定义，与TypedDict规则不符，需要后面使用时定义
+
+reflex官方案例中队style的处理方法：
+    1. action_button_styles: Style | None
+    2.
+
+reflex官方对JS类型ReactNode的处理方法：
+    1. 用Var包裹
+        JS代码：description?: (() => React.ReactNode) | React.ReactNode;
+        包裹示例：description: str | Var | None
+    2. 转为一个确切的样式
+        JS代码：    label: React.ReactNode; 出处：https://github.com/emilkowalski/sonner/blob/3ba7aa17ab7e8101b9cf4893936f873b0d4769b3/src/types.ts#L58
+        包裹示例： label: str
+
 
 未解决的问题：
     1. 对于文档中的   XXX？   	string | null   这一类     对应的JS是   XXX?: string | null;
@@ -42,13 +86,13 @@
     3.
 '''
 import reflex as rx
-from typing import Any, Dict, List, Union, Literal, TypedDict, Tuple, Callable, Iterable, TypeVar, Generic, Optional, Type
+from typing import Any, Dict, List, Union, Literal, TypedDict, Tuple, Callable, Iterable, TypeVar, Generic, Optional, Type, Awaitable
 from enum import Enum
 import math
 #【很可能错误】from jinja2.nodes import Literal
 from reflex.components.el.elements.base import AriaRole, AutoCapitalize, ContentEditable, EnterKeyHint, InputMode
 from reflex.components.component import Component
-
+from reflex.event import EventHandler, no_args_event_spec
 
 # 有些class在react文档中的数据类型声明靠后的，但是前面有需要要调用靠后面的: 还是调整顺序，优先于python调用吧，不遵从文档了
 # reflex包裹react的数据类型不是都要定义为类
@@ -56,18 +100,23 @@ from reflex.components.component import Component
 
 # region 主要类型使用的类型，但不在文档里的（包含: 嵌套对象和类型别名化）
 
+
+
+
 ### 对CSSType的说明:
 # 这个是我自己定义的，代表所有的CSS的类型，JS里是 CSSProperties。
 # reflex里好像有CSS专用的，很可能就是这个 rx.style.Style，
 # 总之先隔离出来，统一管理使用
 ###
+from reflex.style import Style
 CSSType = rx.style.Style
 
-### 对AriaRole的说明:
+
+
+### 对数据类型AriaRole的说明:
 # 这个是我自己定义的，同CSSProperties都是来自react的类型
 # reflex里好像有AriaRole专用的, 很可能就是这个 from reflex.components.el.elements.base import AriaRole
 ###
-AriaRole = AriaRole
 
 class AriaLiveMessageParams(TypedDict):
     """
@@ -160,10 +209,6 @@ Padding = Union[PaddingWithUnit, PaddingConfig]
 HandleType = Literal['source', 'target']   # https://github.com/xyflow/xyflow/blob/main/packages/system/src/types/handles.ts/#L6C13-L6C46
 
 BuiltInNode: Union[Literal["input", "output", "default", "group"], None] = "default" # 没用到
-
-
-class Data(TypedDict):
-    label: str
 
 ''' 关于NodeType的架构   NodeType 很特别，
 注意！！NodeType≠NodeTypes， 这里的NodeType是NodeTypes的键， NodeTypes是真正的组件Component，  由NodeType制定调用NodeTypes的那一部分
@@ -370,8 +415,7 @@ ConnectionLineType = Literal['default', 'straight', 'step', 'smoothstep', 'simpl
 
 ConnectionMode = Literal['strict', 'loose']
 
-class ConnectionState:
-    pass
+
 
 # region CoordinateExtent的前置类型声明
 ###
@@ -408,7 +452,7 @@ class EdgeMarker(TypedDict):
     orient: Optional[str]
     strokeWidth: Optional[float]    # strokeWidth: 笔划宽度
 
-class DefaultEdgeOptions(TypedDict):
+class DefaultEdgeOptions:#(TypedDict):
     '''
     https://www.typescriptlang.org/docs/handbook/utility-types.html#recordkeys-type
     :param 文档：string | undefined   edgeTypes 中定义的边类型。
@@ -420,7 +464,7 @@ class DefaultEdgeOptions(TypedDict):
     hidden: Optional[bool]
     deletable: Optional[bool]
     selectable: Optional[bool]
-    data: Optional[dict[str, str]] = None  # 传递到边缘的任意数据。
+    data: Optional[dict[str, str]]  # 传递到边缘的任意数据。
     markerStart: Optional[EdgeMarker]  # 将标记设置在边的开头。
     markerEnd: Optional[EdgeMarker]  # 将标记设置在边的末端。
     zIndex: Optional[int]
@@ -432,15 +476,14 @@ class DefaultEdgeOptions(TypedDict):
     labelBgStyle: Optional[CSSType]
     labelBgPadding: Optional[List[int]]
     labelBgBorderRadius: Optional[int]
-    style: CSSType  # 【以后再做】
-    className: str
-    reconnectable: Union[str, HandleType]  # 【以后再做】     # 确定是否可以通过将源或目标拖动到新节点来更新边。 此属性将覆盖组件上 prop 设置的默认值。edgesReconnectable<ReactFlow />
-    focusable: bool
-    ariaRole: AriaRole = "group"  # 边缘的 ARIA 角色属性，用于辅助功能。
+    style: Optional[CSSType]    #做到这里了，这个css的有问题
+    className: Optional[str]
+    reconnectable: Optional[Union[str, HandleType]]  # 确定是否可以通过将源或目标拖动到新节点来更新边。 此属性将覆盖组件上 prop 设置的默认值。edgesReconnectable<ReactFlow />
+    focusable: Optional[bool]
+    ariaRole: Optional[AriaRole] = "group"  # 边缘的 ARIA 角色属性，用于辅助功能。
     domAttributes: Optional[Dict[str, Any]] # SVG Dict[str, Any]  不可选内容： "id" | "style" | "className" | "role" | "aria-label" | "dangerouslySetInnerHTML"
 
-class DeleteElements:
-    pass
+
 
 
 EdgeMarkerType = Union[str, EdgeMarker]  # Edges的前置类型声明  出处：export type EdgeMarkerType = string | EdgeMarker; https://github.com/xyflow/xyflow/blob/88cf48289333903ac0f41c6afc12b51ca261e208/packages/system/src/types/edges.ts#L102
@@ -462,14 +505,14 @@ class Edges:
     hidden: Optional[bool]
     deletable: Optional[bool]
     selectable: Optional[bool]
-    data: Optional[EdgeData]   # 【以后在做】
+    data: Optional[EdgeData]
     selected: Optional[bool]
     markerStart: Optional[EdgeMarkerType] # 将标记设置在边的开头。 在边的起点设置标记。  可选值：'arrow'或 'arrowclosed'
     markerEnd: Optional[EdgeMarkerType]   # 将标记设置在边的末端。 在边的终点设置标记。  可选值：'arrow'或 'arrowclosed'
     zIndex: Optional[int]
     ariaLabel: Optional[str]
     interactionWidth: Optional[int]   # ReactFlow 在每条边周围渲染一条不可见的路径，以便于单击或点击它们。此属性设置该不可见路径的宽度。
-    label: Optional[ReactNode]  # 【以后在做】
+    label: Optional[ReactNode]
     labelStyle: Optional[CSSType] # CSS
     labelShowBg: Optional[bool]
     labelBgStyle: Optional[CSSType] # CSS
@@ -540,11 +583,46 @@ EdgeChange = Union[
     EdgeSelectionChange
 ]
 
-class EdgeMouseHandler:
-    pass
+EdgeMouseHandler = rx.EventHandler[lambda event, edge: [event, edge]]   # 接收两个参数
 
 class EdgeProps:
-    # 新增两个字段（JS 中添加的 data: any 和 type: any）
+    '''
+    类型同EdgeType
+    但有附加的两个
+    ！！如果使用EdgeTypes调用这个EdgeProps，则必填 data: Any 和 type: Any  不用则 data: Optional[EdgeData] 不填 type
+    :param data ！使用NodeTypes调用这个NodeProps，则必填 data: Any  不用则 data: Optional[NodeData
+    :param type ！使用NodeTypes调用这个NodeProps，则必填, 不用则不填
+    '''
+    id: str
+    animated: Optional[bool]
+    data: Optional[Union[EdgeData, Any]] # 传递到边缘的任意数据。  # 使用EdgeTypes调用这个EdgeProps，则必填 data: Any  不用则 data: Optional[EdgeData]
+    style: Optional[CSSType]
+    selected: Optional[bool]
+    source: str # 源节点的ID。
+    target: str # 目标节点的ID。
+    selectable: Optional[bool]
+    deletable: Optional[bool]
+    sourceX: float
+    sourceY: float
+    targetX: float
+    targetY: float
+    sourcePosition: Position
+    targetPosition: Position
+    label: Optional[ReactNode]    # 要沿边缘渲染的标签或自定义元素。这通常是文本标签或一些自定义控件。
+    labelStyle: Optional[CSSType] # 要应用于标签的自定义样式。
+    labelShowBg: Optional[bool]
+    labelBgStyle: Optional[CSSType]
+    labelBgPadding: Optional[Union[List[float], Tuple[float, float]]]    # 示例[number, number]
+    labelBgBorderRadius: Optional[float]
+    sourceHandleId: Optional[str]
+    targetHandleId: Optional[str]
+    markerStart: Optional[str]
+    markerEnd: Optional[str]
+    pathOptions: Optional[Any]
+    interactionWidth: Optional[float]
+
+    # 在使用新增两个字段（JS 中添加的 data: any 和 type: any）
+    # 这里是可选的，但如果使用type就必填
     # 增加字段的原因：  https://github.com/xyflow/xyflow/blob/88cf48289333903ac0f41c6afc12b51ca261e208/packages/react/src/types/general.ts#L79
     #   源自：export type EdgeTypes = Record<
     #   string,
@@ -557,8 +635,8 @@ class EdgeProps:
     #     }
     #   >
     #   >;
-    data: Any  # 对应 JS 的 data: any（任意类型的自定义数据）
-    type: Any  # 对应 JS 的 type: any（任意类型的边类型标识）
+    # 合并到上面的data里了 data: Any  # 对应 JS 的 data: any（任意类型的自定义数据）
+    type: Optional[Any]  # 对应 JS 的 type: any（任意类型的边类型标识）
 
 ###
 # https://github.com/xyflow/xyflow/blob/88cf48289333903ac0f41c6afc12b51ca261e208/packages/react/src/types/general.ts#L76
@@ -579,10 +657,9 @@ class EdgeProps:
 # 新代码增加的两个参数增加到了EdgeProps里
 # 需要导入 from reflex.components.component import Component
 ###
-EdgeTypes = Dict[str, Type[Component]]
+EdgeTypes = Dict[str, Type[Component]]  # ！！如果使用EdgeTypes调用这个EdgeProps，则必填 data: Any 和 type: Any
 
-
-class Handle:
+class Handle(TypedDict):
     id: Optional[str] = None
     nodeId: str
     x: float
@@ -614,10 +691,10 @@ class NodeHandleBounds:
     https://github.com/xyflow/xyflow/blob/88cf48289333903ac0f41c6afc12b51ca261e208/packages/system/src/types/nodes.ts#L126
     '''
     # 源连接点数组，支持 None（对应前端 null）
-    source: Optional[List[Handle]] = None  # 对应 Handle[] | null
+    source: Optional[List[Handle]]# = None  # 对应 Handle[] | null
 
     # 目标连接点数组，支持 None（对应前端 null）
-    target: Optional[List[Handle]] = None  # 对应 Handle[] | null
+    target: Optional[List[Handle]]# = None  # 对应 Handle[] | null
 # 非react-flow文档中的主要类型，但因上下文需要在这里
 class InternalNodeInternals:
     """
@@ -655,9 +732,11 @@ class NodeHandle:
     position: Position
     type: HandleType
 
+NodeMouseHandler = rx.EventHandler[no_args_event_spec]  # [lambda event, node: [event, node]]   # 接收两个参数    # 很奇怪，按照文档应该是有连两个参数，但事实是没有一个参数时才能正常运行
+
 NodeOrigin = Union[List[float], Tuple[float, float]] # 节点相对于其位置的原点。 取值范围: 0~1 示例： [0, 0]、 [0.5, 0.5]、 [1, 1]      [0, 0]左上↖、[0.5, 0.5]中央·、[1, 1]右下↘       也可以传入元组
 
-class Nodes(TypedDict):
+class Nodes:#(TypedDict):
     '''
     # JS源码参数带问号?的是可选参数的意思，用Optional[]包裹，等同于 X | None = None
     # region 下面是TypedDict 定义，规定数据形式.
@@ -688,15 +767,139 @@ class Nodes(TypedDict):
     expandParent: Optional[bool]  # 如果将父节点拖动到 父节点的边界
     ariaLabel: Optional[str]
     origin: Optional[NodeOrigin]  # 节点相对于其位置的原点。 示例： [0.5, 0.5] // centers the node、[0, 0] // top left、[1, 1] // bottom right
-    handles: Optional[List[NodeHandle]]
+    handles: rx.Var[Optional[List[NodeHandle]]] # # 里面不能有nodeId， 即便继承了Handel
     measured: Optional[Measured]
-    type: Optional[NodeType] # 节点类型，  如果定义了nodeTypes就必填, 否则报错        也可以自定义节点(https://reactflow.dev/learn/customization/custom-nodes)
+    type: str   #不止于 NodeType 里的这些 # 节点类型，  如果定义了nodeTypes就必填, 否则报错        也可以自定义节点(https://reactflow.dev/learn/customization/custom-nodes)
     style: Optional[CSSType]
     className: Optional[str]
     resizing: Optional[bool]
     focusable: Optional[bool]
     ariaRole: Optional[AriaRole] # AriaRole  边缘的 ARIA 角色属性，用于辅助功能。
     domAttributes: Optional[Dict[str, Any]] # SVG Dict[str, Any]  不可选内容："id" | "draggable" | "style" | "className" | "role" | "aria-label" | "defaultValue" | keyof DOMAttributes<HTMLDivElement>>
+
+class NoConnection: # ConnectionState的前置类型
+    pinProgress: bool = False
+class ConnectionInProgress: # ConnectionState的前置类型
+    def __init__(self): # 有个变量叫做from，用这种方法导入
+        setattr(self, "from", XYPosition)
+    inProgress: bool = True
+    isValid: Optional[bool]
+    fromHandle: Optional[Handle]
+    fromPosition: Position
+    fromNode: Nodes
+    to: XYPosition
+    toHandle: Optional[Handle]
+    toPosition: Position
+    toNode: Optional[Handle]
+ConnectionState = Union[NoConnection, ConnectionInProgress]
+
+###
+# 出处： https://github.com/xyflow/xyflow/blob/83b0034810e5de4a1d2e9f2b109f3fb9dbb88387/packages/react/src/types/instance.ts#L99
+# DeleteElements的使用示例： on_click=lambda: FlowState.delete_elements(
+#                 payload=DeleteElementsPayload(
+#                     nodes=[DeleteNodeItem(id="node-1")],  # 仅需传入 id 即可删除
+#                     edges=[DeleteEdgeItem(id="edge-1")]
+#                 )
+# class FlowState(rx.State):
+#     """处理流程图操作的状态类"""
+#
+#     async def delete_elements(
+#         self,
+#         params: DeleteElementsOptions,  # 参数名和类型与 JS 保持一致
+#         instance_id: str  # 前端实例 ID（作为独立参数，不放入 params）
+#     ) -> DeleteElementsResult:
+#         """
+#         与 JS 的 deleteElements 方法签名完全对齐：
+#         - 参数：params（类型为 DeleteElementsOptions）
+#         - 返回：Awaitable[DeleteElementsResult]（对应 Promise）
+#         """
+#         # 校验实例 ID
+#         if not instance_id:
+#             raise ValueError("缺少 react-flow 实例 ID")
+#
+#         # 1. 转换 params 为前端可识别的 JSON
+#         # 处理 Union 类型：将 Pydantic 模型转为字典，保持与 JS 结构一致
+#         params_json = params.model_dump(by_alias=True, exclude_none=True)
+#
+#         # 2. 调用前端 react-flow 实例的 deleteElements 方法
+#         result_json = await rx.run_script(
+#             script=f"""
+#             const instance = window.reactFlowInstances['{instance_id}'];
+#             if (!instance) throw new Error(`实例 ${instance_id} 不存在`);
+#             const result = await instance.deleteElements({params_json});
+#             return JSON.stringify(result);
+#             """,
+#             return_type="json"
+#         )
+#
+#         # 3. 解析返回结果为 Python 模型
+#         return DeleteElementsResult(
+#             deletedNodes=[Node(**node) for node in result_json["deletedNodes"]],
+#             deletedEdges=[Edge(** edge) for edge in result_json["deletedEdges"]]
+#         )
+#
+#
+# # ------------------------------
+# # 5. 使用示例：完全模拟 JS 的调用方式
+# # ------------------------------
+# def demo() -> rx.Component:
+#     # 假设当前实例 ID 为 "main-flow"
+#     current_instance_id = "main-flow"
+#
+#     return rx.button(
+#         "删除元素",
+#         on_click=lambda: FlowState.delete_elements(
+#             # params 参数结构与 JS 完全一致
+#             params=DeleteElementsOptions(
+#                 nodes=[
+#                     {"id": "node-1"},  # 仅含 id 的对象
+#                     Node(id="node-2", position={"x": 200, "y": 200})  # 完整 Node 对象
+#                 ],
+#                 edges=[{"id": "edge-1"}]  # 仅含 id 的边
+#             ),
+#             instance_id=current_instance_id  # 传入实例 ID
+#         ).then(
+#             lambda res: rx.toast.success(
+#                 f"删除结果：{len(res.deletedNodes)} 节点，{len(res.deletedEdges)} 边"
+#             )
+#         )
+#     )
+#
+###
+class DeleteElementsOptions:    # DeleteElements的前置类型声明
+    """
+    完全对应 JS 的 DeleteElementsOptions 类型：
+    :param nodes: 可选数组，元素可为完整 Node 或仅含 id 的对象
+    :param edges: 可选数组，元素可为完整 Edge 或仅含 id 的对象
+    原文：export type DeleteElementsOptions = {
+      nodes?: (Node | { id: Node['id'] })[];
+      edges?: (Edge | { id: Edge['id'] })[];
+    };
+    来源：https://github.com/xyflow/xyflow/blob/83b0034810e5de4a1d2e9f2b109f3fb9dbb88387/packages/react/src/types/instance.ts#L11
+    """
+    # 用 Union 覆盖 "完整对象" 和 "仅含 id 的对象" 两种情况
+    nodes: Optional[List[Union[Nodes, Dict[str, str]]]] = None  # Dict[str, str] 对应 { id: string }
+    edges: Optional[List[Union[Edges, Dict[str, str]]]] = None
+class DeleteElements:
+    """
+    对应 JS Promise 返回的 { deletedNodes: Node[]; deletedEdges: Edge[] }
+
+    原文：/**
+       * Deletes nodes and edges.
+       *
+       * @param params.nodes - optional nodes array to delete
+       * @param params.edges - optional edges array to delete
+       *
+       * @returns a promise that resolves with the deleted nodes and edges
+       */
+      deleteElements: (params: DeleteElementsOptions) => Promise<{
+        deletedNodes: Node[];
+        deletedEdges: Edge[];
+      }>;
+    来源：https://github.com/xyflow/xyflow/blob/83b0034810e5de4a1d2e9f2b109f3fb9dbb88387/packages/react/src/types/instance.ts#L99
+    """
+    deletedNodes: List[Nodes]
+    deletedEdges: List[Edges]
 
 class FitViewOptions:
     '''
@@ -714,6 +917,10 @@ class FitViewOptions:
     ease: Optional[str] = '(t: number) => ((t *= 2) <= 1 ? t * t * t : (t -= 2) * t * t + 2) / 2;'    # 【以后再做】【可能有问题】接收一个输出0~1float的def，用于显示动画. AI说可以转换成JS的函数，但感觉有点悬，所以先用react提供的JS字符串吧,这里是先加速后减速的缓动函数
     interpolate: Optional[Literal["smooth", "linear"]]
     nodes: Optional[List[Union[Nodes, MinimalNode]]]    # 当使用这个参数时，Nodes中的id必填。 https://reactflow.dev/api-reference/types/fit-view-options#nodes
+#FitView = Callable[
+#    [Optional[FitViewOptions]],  # 入参：可选的泛型配置
+    #Awaitable[bool]  # 返回值：异步布尔值（对应 Promise<boolean>）
+#]
 
 class HandleConnection:
     # https://reactflow.dev/api-reference/types/handle-connection
@@ -734,7 +941,7 @@ class InternalNode: # 【！！潜在问题】
     id: str
     position: XYPosition
     type: Optional[NodeType] # 节点类型，  如果定义了nodeTypes就必填, 否则报错
-    data: Optional[Data]    # 传递给节点的任意数据。  如：{'label': '150'}
+    data: Optional[NodeData]    # 传递给节点的任意数据。  如：{'label': '150'}
     sourcePosition: Optional[Position]
     targetPosition: Optional[Position]
     hidden: Optional[bool]    # 节点是否应在画布上可见。
@@ -758,7 +965,7 @@ class InternalNode: # 【！！潜在问题】
     internals: InternalNodeInternals
 
 
-IsValidConnection = Union[Connection, Edges] # rx.EventHandler[lambda edge: [edge]]    # 【以后再说】 这个有点不太一样，好像不是事件处理器, 腺癌时合理的但还没有测试
+IsValidConnection = rx.EventHandler[lambda edge: [edge]]    # 这个有点不太一样，JS代码好像不是事件处理器, 但各种表现和文档都是接受一个参数的事件处理器
 
 KeyCode = Union[str, List[str]]
 
@@ -778,7 +985,7 @@ class MiniMapNodeProps:
     strokeWidth: Optional[float]
     style: Optional[CSSType]
     selected: bool
-    onClick: Optional[rx.EventHandler] # 【以后再做】可能有两个返回值，还没测试过，但为了不报错先取消返回值 onClick?: (event: MouseEvent, id: string) => void;  https://github.com/xyflow/xyflow/blob/487b13c9ad8903789f56c6fcfd8222f9cb74b812/packages/react/src/additional-components/MiniMap/types.ts#L74
+    onClick: Optional[rx.EventHandler[lambda event, id: [event, id]]] # 接收两个参数， onClick?: (event: MouseEvent, id: string) => void;  https://github.com/xyflow/xyflow/blob/487b13c9ad8903789f56c6fcfd8222f9cb74b812/packages/react/src/additional-components/MiniMap/types.ts#L74
 
 
 
@@ -823,20 +1030,22 @@ NodeChange: Union[
 class NodeConnection:
     source: str
     target: str
-    sourceHandle: Literal[str, None] = None
-    targetHandle: Literal[str, None] = None
+    sourceHandle: str | None
+    targetHandle: str | None
     edgeId: str
 
-class NodeMouseHandler:
-    pass
+
 
 class NodeProps:    # 可能要加  (rx.Base)       【以后再做】【很可能没做完】现有的参数都没问题，但看说明是要与自定组件联合使用，这部分没做
     """
     Reflex 中 React Flow 节点组件的属性类型，完全对齐官方 NodeProps：
     https://reactflow.dev/api-reference/types/node-props
+    ！！如果使用NodeTypes调用这个NodeProps，则必填 data: Any 和 type: Any  不用则 data: Optional[NodeData] 不填 type
+    :param data ！使用NodeTypes调用这个NodeProps，则必填 data: Any  不用则 data: Optional[NodeData
+    :param type ！使用NodeTypes调用这个NodeProps，则必填, 不用则不填
     """
     id: str  # 节点唯一 ID（官方：string，必传）
-    data: Data  # 节点自定义数据（官方：NodeData，灵活结构）
+    data: NodeData  # 节点自定义数据（官方：NodeData，灵活结构）  # 使用NodeTypes调用这个NodeProps，则必填 data: Any  不用则 data: Optional[NodeData]
     width: Optional[float]  # 节点宽度（官方：number | undefined，自动计算或手动设置）
     height: Optional[float]  # 节点高度（官方：number | undefined，自动计算或手动设置）
     source_position: Optional[Position] = None  # 源连接点位置（官方：Position | undefined，如 "right"）
@@ -853,6 +1062,23 @@ class NodeProps:    # 可能要加  (rx.Base)       【以后再做】【很可�
     is_connectable: bool  # 是否可连接（官方：boolean，受 connectable 配置影响）
     position_absolute_x: float  # 绝对位置X
     position_absolute_y: float  # 绝对位置Y
+
+    # 在使用新增两个字段（JS 中添加的 data: any 和 type: any）
+    # 这里是可选的，但如果使用type就必填
+    # https://github.com/xyflow/xyflow/blob/f4a22a34e7f4b64d272394389a6bf362a7895dd6/packages/react/src/types/general.ts#L64
+    #   源自：export type NodeTypes = Record<
+    #   string,
+    #   ComponentType<
+    #     NodeProps & {
+    #       // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    #       data: any;
+    #       // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    #       type: any;
+    #     }
+    #   >
+    # >;
+    # 合并到上面的data里了 data: Any  # 对应 JS 的 data: any（任意类型的自定义数据）
+    type: Optional[Any]  # 对应 JS 的 type: any（任意类型的边类型标识）
 
 ###
 # https://github.com/xyflow/xyflow/blob/88cf48289333903ac0f41c6afc12b51ca261e208/packages/react/src/types/general.ts#L76
@@ -875,7 +1101,7 @@ class NodeProps:    # 可能要加  (rx.Base)       【以后再做】【很可�
 ###
 NodeTypes = Dict[str, Type[Component]] # 详见上方NodeType注释 注！NodeTypes≠NodeType， 这里是存放供NodeType调用的Component
 
-OnBeforeDelete: rx.EventHandler[lambda __0: [__0]]  # 【以后再说】这个好像不太一样    # https://reactflow.dev/api-reference/types/on-before-delete
+OnBeforeDelete = Dict[str, list]  # 【以后再说】这个好像不太一样    # https://reactflow.dev/api-reference/types/on-before-delete
 
 OnConnect = rx.EventHandler[lambda connection: [connection]]  # 接收一个参数  connection  当连接线完成并且用户连接了两个节点时，此事件将随新连接一起触发。 您可以使用该实用程序将连接转换为完整的边。addEdge  包含返回值dict: {'source': '4', 'sourceHandle': None, 'target': '5', 'targetHandle': None}
 
@@ -885,9 +1111,9 @@ OnConnectStart = rx.EventHandler[lambda event, params: [event, params]]  #  接�
 
 OnDelete = rx.EventHandler[lambda params: [params]]  # 接收一个参数   params	{ nodes: NodeType[]; edges: EdgeType[]; }
 
-OnEdgesChange = rx.EventHandler[lambda changes: [changes]]    # 接收一个参数 changes	EdgeChange<EdgeType>[]
+OnEdgesChange = rx.EventHandler[lambda changes: [changes]]    # 接收一个参数 changes	EdgeChange<EdgeType>[]  # 示例值=[{'id': 'e3-4', 'type': 'select', 'selected': False}]
 
-OnEdgesDelete = rx.EventHandler[lambda edges: [edges]]    # 接收一个参数 edges	EdgeType[]
+OnEdgesDelete = rx.EventHandler[lambda edges: [edges]]    # 现在还有问题，直接用会报错   # 接收一个参数 edges	EdgeType[]
 
 OnError = rx.EventHandler[lambda id, message: [id, message]]  # 接收两个参数    id	string	message	string
 
@@ -899,7 +1125,7 @@ OnNodeDrag = rx.EventHandler[lambda event, node, nodes: [event, node, nodes]]   
 
 OnNodesChange = rx.EventHandler[lambda changes: [changes]]  # 接收一个参数    changes	NodeChange<NodeType>[]
 
-OnNodesDelete = rx.EventHandler[lambda nodes: [nodes]]  # 接收一个参数  nodes	NodeType[]
+OnNodesDelete = rx.EventHandler[lambda nodes: [nodes]]  # 现在还有问题，直接用会报错 # 接收一个参数  nodes	NodeType[]  # 【未测试成功, 不确定返回值】
 
 OnReconnect = rx.EventHandler[lambda oldEdge, newConnection: [oldEdge, newConnection]]  # 接收两个参数
 
@@ -925,51 +1151,354 @@ class ProOptions(TypedDict):
     account: Optional[str]
     hideAttribution: bool
 
-class ReactFlowInstance:
-    pass
-    #getNodes
-    #setNodes
-    #addNodes
-    #getNode
-    #getInternalNode
-    #getEdges
-    #setEdges
-    #addEdges
-    #getEdge
-    #toObject
-    #deleteElements
-    #updateNode
-    #updateNodeData
-    #updateEdge
-    #updateEdgeData
-    #getNodesBounds
-    #getHandleConnections
-    #getNodeConnections
-
-class Viewport:
+class Viewport(TypedDict):
     """
     React Flow 视图窗口配置类，包含以下核心字段：
     - x: 水平偏移量（px）
     - y: 垂直偏移量（px）
     - zoom: 缩放比例（默认 1.0，建议范围 0.1~3.0）
+    默认值： { 'x': 0, 'y': 0, 'zoom': 1 }
+    因为是dict，所以要加(TypedDict)
     """
     # 必选：水平偏移量（正数向右，负数向左）
     x: float
     # 必选：垂直偏移量（正数向下，负数向上）
     y: float
     # 必选：缩放比例（默认值设为 1.0，符合 React Flow 初始缩放）
-    zoom: float = 1.0   # 虽然文档没有默认值，但还是1.0规范一下。
+    zoom: float # 默认值设为 1.0 这里不能定义，与TypedDict规则不符，需要后面使用时定义
+
+
+class Rect(Dimensions, XYPosition):
+    '''
+    文档：https://reactflow.dev/api-reference/types/rect
+    JS代码：export type Rect = Dimensions & XYPosition;
+    出处：https://github.com/xyflow/xyflow/blob/f0ce2c876d8688e13632bc86286cf857f86dead6/packages/system/src/types/utils.ts#L39-L40
+    继承了Dimensions, XYPosition这两个类的变量，并没有新增，所以是空的
+    '''
+    # 空的，是正确的。内容就是继承了两个其他的类变量
+    pass
+
+class ViewportHelperFunctionOptions:
+    '''
+    export type ViewportHelperFunctionOptions = {
+      duration?: number;
+      ease?: (t: number) => number;
+      interpolate?: 'smooth' | 'linear';
+    };
+    出处: https://github.com/xyflow/xyflow/blob/83b0034810e5de4a1d2e9f2b109f3fb9dbb88387/packages/system/src/types/general.ts#L216
+    '''
+    duration: Optional[float]
+    ease: Optional[str] = '(t: number) = > number'
+    interpolate: Optional[Literal['smooth', 'linear']]
+
+
+ZoomInOut = Callable[
+    [
+        Optional[ViewportHelperFunctionOptions]  # options?: ViewportHelperFunctionOptions
+    ],
+    bool    # 返回 Promise<boolean>，但在 Python 中直接返回 bool
+]
+ZoomTo = Callable[
+    [
+        float,  # zoomLevel: number
+        Optional[ViewportHelperFunctionOptions] # options?: ViewportHelperFunctionOptions
+    ],
+    bool    # 返回 Promise<boolean>，但在 Python 中直接返回 bool
+]
+GetZoom = Callable[[], float]   # 输入为空，输出为float
+GetViewport = Callable[[], Viewport]
+SetViewport = Callable[[Viewport, Optional[ViewportHelperFunctionOptions]], bool]  # export type SetViewport = (viewport: Viewport, options?: ViewportHelperFunctionOptions) => Promise<boolean>;
+class SetCenterOptions(ViewportHelperFunctionOptions):
+    '''
+    继承了ViewportHelperFunctionOptions并增加了一个类变量
+    JS代码：
+    export type SetCenterOptions = ViewportHelperFunctionOptions & {
+      zoom?: number;
+    };
+    '''
+    zoom: Optional[float]
+SetCenter = Callable[
+    [
+        float,  # x: number
+        float,  # y: number
+        Optional[SetCenterOptions]  # options?: SetCenterOptions
+    ],
+    bool  # 返回 Promise<boolean>，但在 Python 中直接返回 bool
+]
+class FitBoundsOptions(ViewportHelperFunctionOptions):
+    '''
+    继承了ViewportHelperFunctionOptions并增加了一个类变量
+    JS代码：
+    export type FitBoundsOptions = ViewportHelperFunctionOptions & {
+      padding?: number;
+    };
+    '''
+    padding: Optional[float]
+FitBounds = Callable[
+    [
+        Rect,  # bounds: Rect
+        Optional[FitBoundsOptions]  # options?: SetCenterOptions
+    ],
+    bool  # 返回 Promise<boolean>，但在 Python 中直接返回 bool
+]
+class ReactFlowJsonObject:
+    """
+    完全对应 JS 的 ReactFlowJsonObject<NodeType extends Node, EdgeType extends Edge>：
+    - 泛型参数：NodeType（节点类型）、EdgeType（边类型）
+    - 字段：nodes（NodeType 数组）、edges（EdgeType 数组）、viewport（Viewport 对象）
+    """
+    nodes: List[NodeType]  # 节点数组（类型由泛型参数 NodeType 决定）
+    edges: List[EdgeType]  # 边数组（类型由泛型参数 EdgeType 决定）
+    viewport: Viewport     # 视口信息（固定为 Viewport 类型）
+
+    class Config:
+        arbitrary_types_allowed = True  # 允许泛型类型作为字段（Pydantic 需显式开启）
+
+class ViewportHelperFunctions:
+    '''
+    https://github.com/xyflow/xyflow/blob/83b0034810e5de4a1d2e9f2b109f3fb9dbb88387/packages/react/src/types/general.ts#L132
+    '''
+    class ScreenToFlowPosition:
+        '''
+        screenToFlowPosition: (clientPosition: XYPosition, options?: { snapToGrid: boolean }) => XYPosition;
+        https://github.com/xyflow/xyflow/blob/83b0034810e5de4a1d2e9f2b109f3fb9dbb88387/packages/react/src/types/general.ts#L206
+        '''
+        clientPosition: XYPosition
+        options: Optional[bool]
+    class FlowToScreenPosition:
+        '''
+        flowToScreenPosition: (flowPosition: XYPosition) => XYPosition;
+        https://github.com/xyflow/xyflow/blob/83b0034810e5de4a1d2e9f2b109f3fb9dbb88387/packages/react/src/types/general.ts#L216C3-L216C66
+        '''
+        flowPosition: XYPosition
+    zoomIn: ZoomInOut
+    zoomOut: ZoomInOut
+    zoomTo: ViewportHelperFunctionOptions
+    getZoom: Viewport
+    setViewport: SetViewport
+    getViewport: GetViewport
+    setCenter: SetCenter
+    fitBounds: FitBounds
+    screenToFlowPosition: ScreenToFlowPosition
+    flowToScreenPosition: FlowToScreenPosition    # 返回类型: XYPosition
+class GeneralHelpers(object):
+    '''
+    https://github.com/xyflow/xyflow/blob/af375b8f1c4c464d7bd52f2c16b79386d8ea6426/packages/react/src/types/instance.ts#L19
+    '''
+
+    # 下面两种实现方法，不知道哪一种正确
+
+    # region 实现方法一：
+    def get_nodes(self) -> List[NodeType]:
+        """返回 NodeType 类型的节点列表（类型变量直接引用）"""
+        # 实现逻辑...
+        return []
+
+    def get_edges(self) -> List[EdgeType]:
+        """返回 EdgeType 类型的边列表"""
+        # 实现逻辑...
+        return []
+
+    def add_node(self, node: NodeType) -> None:
+        """接收 NodeType 类型的节点（直接使用同文件类型变量）"""
+        # 实现逻辑...
+        pass
+    # endregion
+
+
+    # region 实现方法二
+    getNodes: List[NodeType]
+    setNodes = Callable[
+        [
+            Union[
+                List[NodeType],  # 直接传入节点数组
+                Callable[[List[NodeType]], List[NodeType]]  # 传入更新函数
+            ]
+        ],
+        None  # 返回 void
+    ]
+    addNodes = Callable[
+    [
+        Union[
+            List[NodeType],  # payload
+            NodeType
+        ]
+    ],
+    None  # 返回 void
+    ]
+    getNode = Callable[
+        [
+            str # id: string
+        ],
+        NodeType | None # NodeType | undefined
+    ]
+    getInternalNode = Callable[
+        [
+            str # id: string
+        ],
+        NodeType # NodeType
+    ]
+    getEdges = Callable[[], List[EdgeType]]
+    setEdges = Callable[
+        [   # payload: EdgeType[] | ((edges: EdgeType[]) => EdgeType[])
+            List[EdgeType],
+            Callable[[List[NodeType]], List[NodeType]]  # 传入更新函数
+        ],
+        None  # 返回 void
+    ]
+    addEdges = Callable[
+        [   # payload: EdgeType[] | EdgeType
+            List[EdgeType],
+            EdgeType
+        ],
+        None  # 返回 void
+    ]
+    getEdge = Callable[
+        [
+            str # id: string
+        ],
+        EdgeType | None  # 返回 EdgeType | undefined
+    ]
+    toObject = Callable[
+        [],
+        ReactFlowJsonObject
+    ]
+    deleteElements = Callable[  # 出处：https://github.com/xyflow/xyflow/blob/af375b8f1c4c464d7bd52f2c16b79386d8ea6426/packages/react/src/types/instance.ts#L99
+        [DeleteElementsOptions], # params: DeleteElementsOptions
+        Dict[str, Union[List[Nodes], List[Edges]]]  # 必须要存在两个特定的键：‘deletedNodes’ 和 ‘deletedEdges’
+    ]
+    getIntersectingNodes = Callable[
+        [
+            Union[NodeType, Dict[str, Nodes], Rect],  # Nodes必须包含id  node: NodeType | { id: Node['id'] } | Rect,
+            Optional[bool], #  partially?: boolean
+            Optional[List[NodeType]]    # nodes?: NodeType[]
+        ],
+        List[NodeType]
+    ]
+    isNodeIntersecting = Callable[
+        [
+            Union[NodeType, Dict[str, Nodes], Rect],  # Nodes必须包含id  node: NodeType | { id: Node['id'] } | Rect,
+            Rect,    # area: Rect
+            Optional[bool]  # partially?: boolean
+        ],
+        bool
+    ]
+    updateNode = Callable[  # 示例数据： updateNode('node-1', (node) => ({ position: { x: node.position.x + 10, y: node.position.y } }));
+        [
+            str,    # id: string,
+            Callable[[Optional[NodeType], NodeType], Optional[NodeType]],   # nodeUpdate: Partial<NodeType> | ((node: NodeType) => Partial<NodeType>),
+            Optional[Dict[str, bool]] # 必须包含键名：replace     options?: { replace: boolean }
+        ],
+        None    # => void
+    ]
+    updateNodeData = Callable[  # 示例数据： updateNodeData('node-1', { label: 'A new label' });
+        [
+            str,    # id: string,
+            Union[NodeType, Callable[[NodeType], Optional[NodeType]]],# NodeType必须包含参数‘data’    dataUpdate: Partial<NodeType['data']> | ((node: NodeType) => Partial<NodeType['data']>),
+            Optional[Dict[str, bool]] # 必须包含键名：replace     options?: { replace: boolean }
+        ],
+        None    # => void
+    ]
+    updateEdge = Callable[  # 示例数据：updateEdge('edge-1', (edge) => ({ label: 'A new label' }));
+        [
+            str,  # id: string,
+            Union[EdgeType, Callable[[EdgeType], EdgeType]], # edgeUpdate: Partial<EdgeType> | ((edge: EdgeType) => Partial<EdgeType>),\
+            Optional[bool]  # options?: { replace: boolean }
+        ],
+        None    # => void
+    ]
+    updateEdgeData = Callable[  # 示例数据： updateEdgeData('edge-1', { label: 'A new label' });
+        [
+            str,  # id: string,
+            Union[EdgeType, Callable[[EdgeType], EdgeType]], # EdgeType必须包含参数‘data’ dataUpdate: Partial<EdgeType['data']> | ((edge: EdgeType) => Partial<EdgeType['data']>),
+            Optional[bool]  # options?: { replace: boolean }
+        ],
+        None    # => void
+    ]
+    getNodesBounds = Callable[
+        [
+            List[Union[NodeType, InternalNode, str]]    # (nodes: (NodeType | InternalNode | string)[])
+        ],
+        Rect    # => Rect
+    ]
+
+    class GetHandleConnectionsParams(TypedDict):    # getHandleConnections的变量组成部分
+        '''来源： https://github.com/xyflow/xyflow/blob/af375b8f1c4c464d7bd52f2c16b79386d8ea6426/packages/react/src/types/instance.ts#L206
+        /**
+       * Get all the connections of a handle belonging to a specific node. The type parameter be either
+       * `'source'` or `'target'`.
+       * @deprecated
+       * @param type - handle type 'source' or 'target'
+       * @param id - the handle id (this is only needed if you have multiple handles of the same type, meaning you have to provide a unique id for each handle)
+       * @param nodeId - the node id the handle belongs to
+       * @returns an array with handle connections
+       */
+      getHandleConnections: ({
+        type,
+        id,
+        nodeId,
+      }: {
+        type: HandleType;
+        nodeId: string;
+        id?: string | null;
+      }) => HandleConnection[];
+        '''
+        type: HandleType
+        nodeId: str
+        id: Optional[str]
+    getHandleConnections = Callable[
+        [GetHandleConnectionsParams],
+        List[HandleConnection]
+    ]
+    class GetNodeConnectionsParams(TypedDict):    # getNodeConnections的变量组成部分
+        '''来源： https://github.com/xyflow/xyflow/blob/af375b8f1c4c464d7bd52f2c16b79386d8ea6426/packages/react/src/types/instance.ts#L222
+        /**
+       * Gets all connections to a node. Can be filtered by handle type and id.
+       * @param type - handle type 'source' or 'target'
+       * @param handleId - the handle id (this is only needed if you have multiple handles of the same type, meaning you have to provide a unique id for each handle)
+       * @param nodeId - the node id the handle belongs to
+       * @returns an array with handle connections
+       */
+      getNodeConnections: ({
+        type,
+        handleId,
+        nodeId,
+      }: {
+        type?: HandleType;
+        nodeId: string;
+        handleId?: string | null;
+      }) => NodeConnection[];
+        '''
+        type: Optional[HandleType]  #  type?: HandleType;
+        nodeId: str # nodeId: string;
+        handleId: Optional[str]   # handleId?: string | null;
+    getNodeConnections = Callable[
+        [GetNodeConnectionsParams],
+        List[NodeConnection]
+    ]
+    fitView: FitViewOptions
+    # endregion
+class ReactFlowInstance(  # 【以后再说】这里还有很大问题，不知道用class还是callable的方式好
+    GeneralHelpers,
+    ViewportHelperFunctions
+):
+    """
+    正确写法：
+    1. 继承 GeneralHelpers 时传入类型变量
+    2. 自身继承 Generic[NodeType, EdgeType]（参数是 TypeVar 定义的变量）
+    """
+    viewport_initialized: bool = False  # 示例属性
+
+
+
+
 
 class ReactFlowJsonObject:
     nodes: Nodes
     edges: Edges
     viewport: Viewport
 
-class Rect:
-    width: float
-    height: float
-    x: float
-    y: float
+
 
 class ResizeParams:
     x: float
@@ -988,7 +1517,7 @@ SnapGrid = Union[
 ]  # 长度为2的列表 type SnapGrid = [number, number];  SnapGrid 类型定义窗格上捕捉节点的网格大小。它与 snapToGrid 属性结合使用以启用网格捕捉功能。
 
 
-
+OnResizeHandler = rx.EventHandler[lambda event, params: [event, params]]  # type OnResizeHandler<Params = ResizeParams, Result = void> = (event: ResizeDragEvent, params: Params) => Result;  # https://github.com/xyflow/xyflow/blob/17e568d2a04f57d507f4ef507da3dbf48e12282b/packages/system/src/xyresizer/types.ts#L54
 
 
 

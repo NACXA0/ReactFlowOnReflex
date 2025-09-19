@@ -1,5 +1,11 @@
 """Welcome to Reflex! This file showcases the custom component in a basic app."""
-
+'''注意事项！
+state.eventhandle部分：
+    事件处理器我分为：
+        1. 动作类： 主动触发，要求flow做什么事情，自己定义的通常在这里。
+        2. 监视类： 当前端用户做了什么的时候，由flow触发，来监视前端用户行为。 触发的位置在哪些类型为rx.EventHandler的变量（通常是on_开头的）。 flow主动触发这些事件处理器，有时会传入变量
+    
+'''
 from rxconfig import config # 这里是正确的，虽然有红线  from rxconfig import config
 import reflex as rx
 from reflex_flow import flow, background, base_edge, control_button, controls, edge_label_renderer, edge_text, handle, mini_map, node_resize_control, node_resizer, node_toolbar, panel, viewport_portal
@@ -47,17 +53,17 @@ initial_nodes = [
         'connectable': True, # 是否可以被连接
         'deletable': True, # 是否可以被删除
         'dragHandle':  'handel5',   # 一个类名称，可以应用于节点内的元素，允许这些元素起作用 作为拖动手柄，允许用户通过单击并拖动这些元素来拖动节点。
-        'width': 200, # 宽度
-        'height': 50, # 高度
-        'initialWidth': 50, # 内部宽度
-        'initialHeight': 30, # 内部高度
+        'width': 150, # 宽度     同时作用小地图上的形状
+        'height': 50, # 高度     同时作用小地图上的形状
+        'initialWidth': 150, # 内部宽度     同时作用小地图上的形状
+        'initialHeight': 500, # 内部高度    同时作用小地图上的形状
         'parentId': 'unknow',   # 父节点 ID，用于创建子流
         'zIndex': 1,    # z轴高度
         'extent': [[-500, -500], [500, 500]], # 可以移动节点的边界       可选参数: [[number, number], [number, number]] | "parent" | null    参数解释: 1. 坐标范围表示坐标系中的两个点：一个位于顶部 左角和右下角的一个。它用于表示 流中节点的边界或视口的边界。 2. 跟随父节点 3. 【常用】无限大
         'expandParent': True,    # 当 True时，如果将父节点拖动到 父节点的边界
         'ariaLabel': '',  # 【未知】 aria标签
         'origin': [0, 0], # 节点相对于其位置的原点。  示例数据:[0, 0][0.5, 0.5][1, 1]  节点的原点决定了它相对于其自身坐标的放置方式。 将其放置在其位置的左上角、右侧中央和右下角。
-        'handles': {
+        'handles': [{   # 不能有nodeId， 即便继承了Handel
             'width': 200,
             'height': 100,
             'id': None, #    None 或者 str
@@ -65,18 +71,39 @@ initial_nodes = [
             'y': 0,
             'position': 'left',   # 可选参数：'left', 'top', 'right', 'bottom'
             'type': 'source',  # 可选参数： 'source' | 'target'
-        },
+        }],
         'measured': {'width': 200, 'height': 100},
         'type': 'output',   # nodeTypes 中定义的节点类型    可选参数: 'input' | 'output' | 'default' | 'group'
         'style': {},
         'className': 'undefine',
         'resizing': False, # 正在重设大小
         'focusable': True,    # 是否可聚焦
-        # 'ariaRole': 'group'  # 节点元素的 ARIA 角色属性，用于辅助功能。 【未知】
-        # 'domAttributes': # 用于向节点的 DOM 元素添加自定义属性的通用逃生舱口。    【未知】
+        'ariaRole': 'group',  # 节点元素的 ARIA 角色属性，用于辅助功能。 【未知】
+        'domAttributes': {}    # 用于向节点的 DOM 元素添加自定义属性的通用逃生舱口。    【未知】
+    },
 
+    {
+        'id': '6',
+        'position': {'x': -200, 'y': 0},
+        'data': {'label': 'ResizableNode'},
+        'type': 'ResizableNode',
+        'width': 150, # 宽度     同时作用小地图上的形状
+        'height': 50, # 高度     同时作用小地图上的形状
+        'initialWidth': 150, # 内部宽度     同时作用小地图上的形状
+        'initialHeight': 50, # 内部高度    同时作用小地图上的形状
 
-
+    },
+    {
+        'id': '7',
+        'position': {'x': -200, 'y': -100},
+        'data': {'label': 'ResizableNodeSelected'},
+        'type': 'ResizableNodeSelected'
+    },
+    {
+        'id': '8',
+        'position': {'x': -200, 'y': -200},
+        'data': {'label': 'CustomResizerNode'},
+        'type': 'CustomResizerNode'
     }
 ]
 
@@ -147,8 +174,8 @@ initial_edges = [
         'className': 'undefine',    # str
         'reconnectable': True, # 类型: boolean | HandleType     确定是否可以通过将源或目标拖动到新节点来更新边。 此属性将覆盖组件上 prop 设置的默认值。edgesReconnectable<ReactFlow />
         'focusable': True, # 是否可聚焦
-        # 'ariaRole': 'group',    # 【未知】  类型：AriaRole     边缘的 ARIA 角色属性，用于辅助功能。
-        # 'domAttributes': # 用于向节点的 DOM 元素添加自定义属性的通用逃生舱口。    【未知】
+        'ariaRole': 'group',    # 【未知】  类型：AriaRole     边缘的 ARIA 角色属性，用于辅助功能。
+        'domAttributes': {} # 用于向节点的 DOM 元素添加自定义属性的通用逃生舱口。    【未知】
     },
 
 ]
@@ -176,13 +203,23 @@ class State(rx.State):
             'data': {'label': label},
             'position': {'x': x, 'y': y},
             'draggable': True,
+            'selectable': True,  # 是否可以被选中
         }
         self.nodes.append(new_node)
+
+    # 删除最后一个节点
+    @rx.event
+    def delete_last_node(self):
+        self.nodes.pop()
 
     @rx.event
     def clear_graph(self):
         self.nodes = []  # Clear the nodes list
         self.edges = []  # Clear the edges list
+
+    @rx.event
+    def reset_var(self):
+        self.reset()
 
     @rx.event
     def on_connect(self, new_edge):
@@ -205,6 +242,7 @@ class State(rx.State):
 
     @rx.event
     def on_nodes_change(self, node_changes: List[Dict[str, Any]]):
+        #print(f'触发: State.on_nodes_change')
         # 在发生拖动等事件时接收节点列表
         map_id_to_new_position = defaultdict(dict)
 
@@ -219,11 +257,7 @@ class State(rx.State):
                 new_position = map_id_to_new_position[node["id"]]
                 self.nodes[i]["position"] = new_position
 
-    @rx.event
-    def reset_var(self):
-        self.reset()
-
-    # 占位符事件处理器-可接受(0~5)个参数——为事件处理器提供一个虚假的接入点
+    # 【用于测试】占位符事件处理器-可接受(0~5)个参数——为事件处理器提供一个虚假的接入点
     @rx.event
     def fake_event_handel(self , a=None, b=None, c=None, d=None, e=None):
         print('触发了占位符事件处理器.******************************')
@@ -415,6 +449,151 @@ def component_viewport_portal() -> rx.Component:
 # react_flow主要部分——完全版
 def component_flow() -> rx.Component:
     return flow(
+        # region 组件
+        background(
+            id='BackgroundID',
+            color='yellow',
+            bg_color='purple',
+            class_name='BackgroundClassName',
+            pattern_class_name='BackgroundPatternClassName',
+            gap=(20, 20),  # 20 = [20, 20]
+            size=1,
+            offset=0,
+            line_width=1,
+            variant='dots',
+            style={}
+        ),
+
+        base_edge(  # 外观非功能，看不太懂，一直没效果
+            path='M 0 0 L 100 100',
+            markerStart='url（#markerId）',
+            markerEnd='url（#markerId）',
+            # label = ,
+            labelStyle={},
+            labelShowBg=True,
+            labelBgStyle={},
+            labelBgPadding=[1, 1],
+            labelBgBorderRadius=1,
+            interactionWidth=20,
+            labelX=0,
+            labelY=0
+            # ...props
+        ),
+
+        controls(
+            show_zoom=True,
+            show_fit_view=True,
+            show_interactive=True,
+            on_zoom_in=State.fake_event_handel,
+            on_zoom_out=State.fake_event_handel,
+            on_fit_view=State.fake_event_handel,
+            on_interactive_change=State.fake_event_handel,
+            position='bottom-left',
+            # children
+            style={'color': 'blue'},
+            className=None,
+            aria_label='React Flow controls',
+            orientation='vertical'
+        ),
+
+        edge_text(  # 【以后再说】没见到效果
+            x=0,
+            y=0,
+            # label=    # 【以后再说】
+            # label_style = {'color': 'yellow'},    # 【以后再说】
+            label_show_bg=False,
+            # label_bg_style = #rx.style.Style(color='blue'),   # 【以后再说】
+            label_bg_padding=[1, 1],
+            label_bg_border_radius=1
+        ),
+
+        handle( # 【以后再说】没见到效果
+            id='HandleId',
+            type='source',
+            position='top',
+            is_connectable=True,
+            is_connectable_start=True,
+            is_connectable_end=True,
+            on_connect=State.fake_event_handel
+        ),
+
+        mini_map(
+            position='bottom-right',
+            on_click=State.fake_event_handel,
+            node_color="#e2e2e2",
+            node_stroke_color="transparent",
+            node_class_name="",
+            node_border_radius=5,
+            node_stroke_width=2,
+            # node_component = rx.text('ABCDEFG'),
+            bg_color='gray',
+            mask_color="rgba(240, 240, 240, 0.6)",
+            mask_stroke_color='transparent',
+            mask_stroke_width=1,
+            on_node_click=State.fake_event_handel,
+            pannable=False,
+            zoomable=False,
+            ariaLabel="Mini Map",
+            inverse_pan=False,
+            zoom_step=10,
+            offset_scale=5
+
+        ),
+
+        node_resize_control(    # 【以后再说】没见到效果
+            node_id='NodeResizeControlNodeId',
+            color='red',
+            min_width=10,
+            min_height=10,
+            # max_width =  sys.float_info.max,
+            # max_heigh = sys.float_info.max,
+            keep_aspect_ratio=False,
+            should_resize=State.fake_event_handel,
+            auto_scale=True,
+            on_resize_start=State.fake_event_handel,
+            on_resize=State.fake_event_handel,
+            on_resize_end=State.fake_event_handel,
+            position='top-left',
+            variant="handle",
+            resize_direction='horizontal',
+            class_name='NodeResizeControlClassName',
+            style={}
+            # children =
+        ),
+        node_resizer(  # 这个还有很大问题，不知道如何使用，必须要修改，只是参数差不多了   用法很可能是：放到主flow的node_types参数下面，但现在node_types的数据类型一直没定义好
+            node_id='NodeResizerNodeId',
+            color='blue',
+            handle_class_name='NodeResizerHandleClassName',
+            # handle_style = {},
+            line_class_name='NodeResizerLineClassName',
+            # line_style = {},
+            isVisible=True,
+            min_width=10,
+            min_weight=10,
+            # max_width = ,
+            # max_height = ,
+            keep_aspect_ratio=False,
+            auto_scale=True,
+            should_resize=State.fake_event_handel,
+            on_resize_start=State.fake_event_handel,
+            on_resize=State.fake_event_handel,
+            on_resize_end=State.fake_event_handel,
+        ),
+        node_toolbar(  # 这个还有很大问题，不知道如何使用，必须要修改，只是参数差不多了
+            nodeId=[1, 2, 3],
+            isVisible=True,
+            position='top',
+            offset=10,
+            align='center'
+            # ...props
+        ),
+        panel(  # 这个还有很大问题，不知道如何使用，必须要修改，只是参数差不多了
+            position='top-left'
+            # ...props
+        ),
+        viewport_portal(),
+        # endregion
+
 
         # region 常见道具
         width = None,
@@ -583,16 +762,16 @@ def component_flow_demo() -> rx.Component:
     return flow(
         # 调用组件部分
         background(),
-        # 【以后再说】base_edge(),    外观非功能，看不太懂，一直没效果
+        #base_edge(),    #外观非功能，看不太懂，一直没效果
         controls(),
         #edge_label_renderer(),  # 【以后再说】【未测试】【看不到变化】
-        # edge_text(),    # 【以后再说】
+        #edge_text(),
         #handle(),
         mini_map(),
         #node_resize_control(),
-        #node_resizer(), # 这个还有很大问题，不知道如何使用，必须要修改，只是参数差不多了
+        #node_resizer(), # 这个还有很大问题，不知道如何使用，必须要修改，只是参数差不多了   用法很可能是：放到主flow的node_types参数下面，但现在node_types的数据类型一直没定义好
         #node_toolbar(),  # 这个还有很大问题，不知道如何使用，必须要修改，只是参数差不多了
-        #panel组件由组件 controls 或 mini_map内部使用     panel可帮助您将内容放置在视口上方
+        #panel(),    # 这个还有很大问题，不知道如何使用，必须要修改，只是参数差不多了    # 组件由组件 controls 或 mini_map内部使用     panel可帮助您将内容放置在视口上方
         #viewport_portal(),    # 这个还有很大问题，不知道如何使用，必须要修改
 
 
@@ -603,14 +782,23 @@ def component_flow_demo() -> rx.Component:
         on_nodes_change=lambda e0: State.on_nodes_change(e0),
         nodes=State.nodes,
         edges=State.edges,
-        fit_view=True,
-
+        node_types='default',#[node_resizer(node_id='6', color = 'blue')],  # 做到这里了，这个用法应该是对的，根据react-flow的文档，但是这里对于你规定数据类型要改变
+        fit_view=True
     )
 
 
+
+
+
+
+
+
+
+
+
+
+
 # endregion
-
-
 
 
 
@@ -633,13 +821,35 @@ def index() -> rx.Component:
             width="100%",
         ),
         rx.button(
+            "删除最后一个节点",
+            on_click=State.delete_last_node,
+            width="100%",
+        ),
+        rx.button(
             '重置',
             on_click=State.reset_var,
             width="100%",
         ),
-        height="30em",
+        height="25rem",
         width="100%",
     )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
